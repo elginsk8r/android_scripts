@@ -20,6 +20,9 @@ UL_CMD="rsync -P -e \"ssh -p2222\""
 # where $target is element of $TARGETLIST
 ZIPPREFIX="Evervolv"
 
+# vendor path (ie /vendor/ev)
+SHORTVENDOR="ev"
+
 # for getopts
 SYNC=0
 UPLOAD=1 #True by default
@@ -33,12 +36,12 @@ TIMESTART=`date +%s`
 
 
 ## device array
-#if [ -e vendor/ev/vendorsetup.sh ]; then
-#    TARGETLIST=($(<vendor/ev/vendorsetup.sh))
+#if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
+#    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
 #    # the rest of this script relies on uniform naming
 #    # ie passion, ev_passion-eng will not work so remove pre/post fixes
-#    TARGETLIST=(${TARGETLIST[@]#ev_})
-#    TARGETLIST=(${TARGETLIST[@]%-eng})
+#    TARGETLIST=(${TARGETLIST[@]#*_})
+#    TARGETLIST=(${TARGETLIST[@]%-*})
 #    # at this point every other entry is add_lunch_combo, so remove them
 #    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
 #else
