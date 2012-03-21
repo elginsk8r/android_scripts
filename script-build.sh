@@ -11,7 +11,7 @@ GOOHOST="upload.goo-inside.me"
 # date stamped folder (override with -p)
 UL_DIR=`date +%Y%m%d`
 # upload path (must be preexisting)
-UL_PATH="~/$GOOUSER/public_html/"
+UL_PATH="~/public_html/"
 
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
