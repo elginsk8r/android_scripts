@@ -12,8 +12,6 @@ GOOHOST="upload.goo-inside.me"
 UL_DIR=`date +%Y%m%d`
 # upload path (must be preexisting)
 UL_PATH="~/$GOOUSER/public_html/"
-# upload command
-UL_CMD="rsync -P -e \"ssh -p2222\""
 
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
@@ -153,7 +151,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
             __fail upload_nozipfound $target
         else
             echo "UPLOADING $zipname"
-            $UL_CMD $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
+            rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
         fi
         # upload the extra passion file
         if [ "$target" == "passion" ]; then
@@ -163,7 +161,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
                 __fail upload_notarballfound $target; continue
             else
                 echo "UPLOADING `basename $zipname`"
-                $UL_CMD $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
+                rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
             fi
         fi
     fi
