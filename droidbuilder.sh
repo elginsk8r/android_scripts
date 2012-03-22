@@ -36,12 +36,12 @@ TIMESTART=`date +%s`
 ## device array
 #if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
 #    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
-#    # the rest of this script relies on uniform naming
-#    # ie passion, ev_passion-eng will not work so remove pre/post fixes
-#    TARGETLIST=(${TARGETLIST[@]#*_})
-#    TARGETLIST=(${TARGETLIST[@]%-*})
 #    # at this point every other entry is add_lunch_combo, so remove them
 #    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
+#    # the rest of this script relies on uniform naming, ie passion
+#    # ev_passion-eng will not work so remove pre/post fixes
+#    TARGETLIST=(${TARGETLIST[@]#*_})
+#    TARGETLIST=(${TARGETLIST[@]%-*})
 #else
     TARGETLIST=(bravo epic4gtouch inc passion ruby shooter supersonic)
 #fi
