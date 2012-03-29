@@ -13,6 +13,10 @@ UL_DIR=`date +%Y%m%d`
 # upload path (must be preexisting)
 UL_PATH="~/public_html/"
 
+# location to upload when building from a cron job
+# format $UL_PATH/$UL_CRON_PATH/$UL_DIR
+UL_CRON_PATH="cron"
+
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
 # where $target is element of $TARGETLIST
@@ -26,6 +30,7 @@ SYNC=0
 UPLOAD=1 #True by default
 CLOBBER=0
 NIGHTLY=0
+CRONJOB=0
 
 # dont modify
 FAILNUM=0
@@ -47,7 +52,7 @@ TIMESTART=`date +%s`
 #fi
 
 function __help() {
-    echo "Usage: `basename $0` -andksh -p <path> -t <target>|\"<target> <target>\""
+    echo "Usage: `basename $0` -andkshc -p <path> -t <target>|\"<target> <target>\""
     echo "Options:"
     echo "-a     build all targets"
     echo "-t     build specified target(s)"
@@ -57,6 +62,7 @@ function __help() {
     echo "-k     clobber tree"
     echo "-n     build nightly"
     echo "-h     show this help"
+    echo "-c     special case for cronjobs"
 }
 
 # accepts 2 args detailing the issue
@@ -68,12 +74,16 @@ function __fail() {
 }
 
 function __calc_run_time() {
-datefinish=`date +%s`
-timediff=$((datefinish - TIMESTART))
-usedhours=$(( timediff / 3600 ))
-usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60))
-usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
-echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** "
+    datefinish=`date +%s`
+    timediff=$((datefinish - TIMESTART))
+    usedhours=$(( timediff / 3600 ))
+    usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60))
+    usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
+    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** "
+    # For cronjobs generate a short report file
+    if [ $CRONJOB -eq 1 ]; then
+        echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " >> ~/droidbuilder-failreport-${UL_DIR}
+    fi
 }
 
 #
@@ -87,7 +97,7 @@ if [ "$1" == "help" ]; then
     __help; exit;
 fi
 
-while getopts ":ansdkhp:t:" opt; do
+while getopts ":ansdkhcp:t:" opt; do
     case $opt in
         a) ;; # noop
         n) NIGHTLY=1;;
@@ -97,6 +107,7 @@ while getopts ":ansdkhp:t:" opt; do
         k) CLOBBER=1;;
         t) TARGETLIST=($OPTARG);;
         h) __help; exit;;
+        c) CRONJOB=1;;
         \?) echo "Invalid option -$OPTARG"; __help; exit 1;;
         :) echo "Option -$OPTARG requires an argument."; exit 1;;
     esac
@@ -115,6 +126,14 @@ fi
 if [ $CLOBBER -eq 1 ]; then
     make clobber || __fail clobber make
 fi
+
+# Append extra path if needed
+if [ $CRONJOB -eq 1 ]; then
+    UL_PATH+="${UL_CRON_PATH}/"
+fi
+
+# Set full upload path now
+UL_PATH+="${UL_DIR}/"
 
 # loop the TARGETLIST array and build all targets present
 # if a step errors the step is logged to FAILLIST and the loop
@@ -145,13 +164,14 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     # upload
     if [ $UPLOAD -eq 1 ]; then
+
         zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
         # we cant upload a non existent file
         if [ -z "$zipname" ]; then
-            __fail upload_nozipfound $target
+            __fail upload_nozipfound $target; continue
         else
             echo "UPLOADING $zipname"
-            rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
+            rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
         fi
         # upload the extra passion file
         if [ "$target" == "passion" ]; then
@@ -161,7 +181,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
                 __fail upload_notarballfound $target; continue
             else
                 echo "UPLOADING `basename $zipname`"
-                rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH}${UL_DIR}/ || __fail rsync $target
+                rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
             fi
         fi
     fi
@@ -171,6 +191,10 @@ done
 # Print all failures at the end so we actually see them!
 while [ $FAILNUM -gt 0 ]; do
     echo ${FAILLIST[$FAILNUM]}
+    # For cronjobs generate a short report file
+    if [ $CRONJOB -eq 1 ]; then
+        echo ${FAILLIST[$FAILNUM]} >> ~/droidbuilder-failreport-${UL_DIR}
+    fi
     ((--FAILNUM))
 done
 
