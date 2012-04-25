@@ -27,10 +27,11 @@ SHORTVENDOR="ev"
 
 # for getopts
 SYNC=0
-UPLOAD=1 #True by default
+UPLOAD=1
 CLOBBER=0
 NIGHTLY=0
 CRONJOB=0
+KERNEL=0
 
 # dont modify
 FAILNUM=0
@@ -38,31 +39,35 @@ FAILLIST=(zero)
 TIMESTART=`date +%s`
 
 
-## device array
-#if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
-#    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
-#    # at this point every other entry is add_lunch_combo, so remove them
-#    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
-#    # the rest of this script relies on uniform naming, ie passion
-#    # ev_passion-eng will not work so remove pre/post fixes
-#    TARGETLIST=(${TARGETLIST[@]#*_})
-#    TARGETLIST=(${TARGETLIST[@]%-*})
-#else
+# device array
+if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
+    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
+    # at this point every other entry is add_lunch_combo, so remove them
+    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
+    # the rest of this script relies on uniform naming, ie passion
+    # ev_passion-eng will not work so remove pre/post fixes
+    TARGETLIST=(${TARGETLIST[@]#*_})
+    TARGETLIST=(${TARGETLIST[@]%-*})
+else
     TARGETLIST=(bravo epic4gtouch inc passion ruby shooter supersonic)
-#fi
+fi
 
 function __help() {
-    echo "Usage: `basename $0` -andkshc -p <path> -t <target>|\"<target> <target>\""
-    echo "Options:"
-    echo "-a     build all targets"
-    echo "-t     build specified target(s)"
-    echo "-s     sync repo"
-    echo "-d     dont upload"
-    echo "-p     directory(path) for upload (appended to $UL_PATH)"
-    echo "-k     clobber tree"
-    echo "-n     build nightly"
-    echo "-h     show this help"
-    echo "-c     special case for cronjobs"
+cat <<EOF
+Usage: `basename $0` -andkshci -p <path> -t <target>|"<target> <target>"
+
+Options:
+-a     build all targets
+-t     build specified target(s)
+-s     sync repo
+-d     dont upload
+-p     directory(path) for upload (appended to $UL_PATH)
+-k     clobber tree
+-n     build nightly
+-h     show this help
+-c     special case for cronjobs
+-i     build kernel inline
+EOF
 }
 
 # accepts 2 args detailing the issue
@@ -97,7 +102,7 @@ if [ "$1" == "help" ]; then
     __help; exit;
 fi
 
-while getopts ":ansdkhcp:t:" opt; do
+while getopts ":ansdkhcip:t:" opt; do
     case $opt in
         a) ;; # noop
         n) NIGHTLY=1;;
@@ -108,6 +113,7 @@ while getopts ":ansdkhcp:t:" opt; do
         t) TARGETLIST=($OPTARG);;
         h) __help; exit;;
         c) CRONJOB=1;;
+        i) KERNEL=1;;
         \?) echo "Invalid option -$OPTARG"; __help; exit 1;;
         :) echo "Option -$OPTARG requires an argument."; exit 1;;
     esac
@@ -145,6 +151,10 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     echo  "BREAKFAST for: $target"
     breakfast $target || { __fail breakfast $target; continue; }
 
+    if [ $KERNEL -eq 1 ]; then
+        find_deps
+    fi
+
     echo "CLEAN for: $target"
     make clean || { __fail clean $target; continue; }
 
@@ -157,6 +167,10 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     if [ $NIGHTLY -eq 1 ]; then
         buildargs+=" NIGHTLY_BUILD=true"
+    fi
+
+    fi [ $KERNEL -eq 1 ]; then
+        buildargs+=" BUILD_KERNEL=true"
     fi
 
     echo "BUILD for: $target: args = $buildargs"
