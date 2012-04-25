@@ -15,6 +15,7 @@ UL_PATH="~/public_html/"
 
 # location to upload when building from a cron job
 # format $UL_PATH/$UL_CRON_PATH/$UL_DIR
+# CAREFUL this directory must be pre-existing rsync wont make parents
 UL_CRON_PATH="cron"
 
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
@@ -24,6 +25,9 @@ ZIPPREFIX="Evervolv"
 
 # vendor path (ie /vendor/ev)
 SHORTVENDOR="ev"
+
+# report file
+REPORT_FILE=report-`date +%Y%m%d`
 
 # for getopts
 SYNC=0
@@ -74,7 +78,7 @@ EOF
 
 # accepts 2 args detailing the issue
 function __fail() {
-    #increment first, item 0 will be used as the sentinal
+    # increment first, item 0 will be used as the sentinal
     ((++FAILNUM))
     FAILLIST[$FAILNUM]="$2 : failed at $1"
     echo ${FAILLIST[$FAILNUM]}
@@ -87,10 +91,8 @@ function __calc_run_time() {
     usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60))
     usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
     echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** "
-    # For cronjobs generate a short report file
-    if [ $CRONJOB -eq 1 ]; then
-        echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " >> ~/droidbuilder-failreport-${UL_DIR}
-    fi
+    # add build time to report file
+    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " >> ~/droidbuilder/${REPORT_FILE}
 }
 
 #
@@ -218,17 +220,21 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     # end upload
 done
 
+# create log directory
+if [ ! -d ~/droidbuilder ]; then
+    mkdir -p ~/droidbuilder
+fi
+
 # Print all failures at the end so we actually see them!
 while [ $FAILNUM -gt 0 ]; do
     echo ${FAILLIST[$FAILNUM]}
-    # For cronjobs generate a short report file
-    if [ $CRONJOB -eq 1 ]; then
-        echo ${FAILLIST[$FAILNUM]} >> ~/droidbuilder-failreport-${UL_DIR}
-    fi
+    # generate a short report file
+    echo ${FAILLIST[$FAILNUM]} >> ~/droidbuilder/${REPORT_FILE}
     ((--FAILNUM))
 done
 
 __calc_run_time
+
 echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/$GOOUSER/$UL_DIR/"
 
 exit
