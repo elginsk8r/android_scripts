@@ -32,6 +32,7 @@ CLOBBER=0
 NIGHTLY=0
 CRONJOB=0
 KERNEL=0
+PMINI=0
 
 # dont modify
 FAILNUM=0
@@ -54,19 +55,20 @@ fi
 
 function __help() {
 cat <<EOF
-Usage: `basename $0` -andkshci -p <path> -t <target>|"<target> <target>"
+Usage: `basename $0` -acdhikmns -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     build all targets
--t     build specified target(s)
--s     sync repo
--d     dont upload
--p     directory(path) for upload (appended to $UL_PATH)
--k     clobber tree
--n     build nightly
--h     show this help
 -c     special case for cronjobs
+-d     dont upload
+-h     show this help
 -i     build kernel inline
+-k     clobber tree
+-m     also build miniskirt (for passion only)
+-n     build nightly
+-p     directory(path) for upload (appended to $UL_PATH)
+-s     sync repo
+-t     build specified target(s)
 EOF
 }
 
@@ -102,7 +104,7 @@ if [ "$1" == "help" ]; then
     __help; exit;
 fi
 
-while getopts ":ansdkhcip:t:" opt; do
+while getopts ":ansdkhcimp:t:" opt; do
     case $opt in
         a) ;; # noop
         n) NIGHTLY=1;;
@@ -114,6 +116,7 @@ while getopts ":ansdkhcip:t:" opt; do
         h) __help; exit;;
         c) CRONJOB=1;;
         i) KERNEL=1;;
+        m) PMINI=1;;
         \?) echo "Invalid option -$OPTARG"; __help; exit 1;;
         :) echo "Option -$OPTARG requires an argument."; exit 1;;
     esac
@@ -141,12 +144,27 @@ fi
 # Set full upload path now
 UL_PATH+="${UL_DIR}/"
 
+# Append the miniskirt target for use later
+if [ $PMINI -eq 1 ]; then
+    TARGETLIST=(${TARGETLIST[@]} miniskirt)
+fi
+
 # loop the TARGETLIST array and build all targets present
 # if a step errors the step is logged to FAILLIST and the loop
 # continues to the next item in TARGETLIST
 for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     target=${TARGETLIST[$ii]}
+
+    buildargs="otapackage"
+
+    # the miniskirt target is not valid it is merely used to
+    # append the MINISKIRT build arg and needs to be redefined
+    # properly as passion
+    if [ "$target" == "miniskirt" ]; then
+        target="passion"
+        buildargs+=" MINISKIRT=true"
+    fi
 
     echo  "BREAKFAST for: $target"
     breakfast $target || { __fail breakfast $target; continue; }
@@ -157,8 +175,6 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     echo "CLEAN for: $target"
     make clean || { __fail clean $target; continue; }
-
-    buildargs="otapackage"
 
     # passion also gets fastboot images
     if [ "$target" == "passion" ]; then
