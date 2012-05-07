@@ -187,7 +187,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" NIGHTLY_BUILD=true"
     fi
 
-    fi [ $KERNEL -eq 1 ]; then
+    if [ $KERNEL -eq 1 ]; then
         buildargs+=" BUILD_KERNEL=true"
     fi
 
