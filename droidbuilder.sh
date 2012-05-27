@@ -90,9 +90,7 @@ function __calc_run_time() {
     usedhours=$(( timediff / 3600 ))
     usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60))
     usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
-    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** "
-    # add build time to report file
-    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " >> ~/droidbuilder/${REPORT_FILE}
+    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " | tee -a ~/droidbuilder/${REPORT_FILE}
 }
 
 #
@@ -192,7 +190,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     echo "BUILD for: $target: args = $buildargs"
-    mka $buildargs || { __fail mka $target; continue; }
+    schedtool -B -n 1 -e ionice -n 1 make -j 8 $buildargs || { __fail mka $target; continue; }
 
     # upload
     if [ $UPLOAD -eq 1 ]; then
@@ -227,14 +225,12 @@ fi
 
 # Print all failures at the end so we actually see them!
 while [ $FAILNUM -gt 0 ]; do
-    echo ${FAILLIST[$FAILNUM]}
-    # generate a short report file
-    echo ${FAILLIST[$FAILNUM]} >> ~/droidbuilder/${REPORT_FILE}
+    echo ${FAILLIST[$FAILNUM]} | tee -a ~/droidbuilder/${REPORT_FILE}
     ((--FAILNUM))
 done
 
 __calc_run_time
 
-echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/$GOOUSER/$UL_DIR/"
+echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/$GOOUSER/$UL_DIR/" | tee -a ~/droidbuilder/${REPORT_FILE}
 
 exit
