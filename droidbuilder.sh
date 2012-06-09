@@ -29,6 +29,11 @@ SHORTVENDOR="ev"
 # report file
 REPORT_FILE=report-`date +%Y%m%d`
 
+# Linaro build items
+TOOLCHAIN_URL=http://snapshots.linaro.org/android/~linaro-android/toolchain-4.7-2012.05/1/android-toolchain-eabi-linaro-4.7-2012.05-1-2012-05-18_15-49-28-linux-x86.tar.bz2
+TOOLCHAIN_PATH=~/android/linaro/toolchains
+TOOLCHAIN_PREFIX=${TOOLCHAIN_PATH}/android-toolchain-eabi/bin/arm-linux-androideabi-
+
 # for getopts
 SYNC=0
 UPLOAD=1
@@ -37,6 +42,7 @@ NIGHTLY=0
 CRONJOB=0
 KERNEL=0
 PMINI=0
+LBUILD=0
 
 # dont modify
 FAILNUM=0
@@ -59,7 +65,7 @@ fi
 
 function __help() {
 cat <<EOF
-Usage: `basename $0` -acdhikmns -p <path> -t <target>|"<target> <target>"
+Usage: `basename $0` -acdhiklmns -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     build all targets
@@ -68,6 +74,7 @@ Options:
 -h     show this help
 -i     build kernel inline
 -k     clobber tree
+-l     linaro build
 -m     also build miniskirt (for passion only)
 -n     build nightly
 -p     directory(path) for upload (appended to $UL_PATH)
@@ -117,6 +124,7 @@ while getopts ":ansdkhcimp:t:" opt; do
         c) CRONJOB=1;;
         i) KERNEL=1;;
         m) PMINI=1;;
+        l) LBUILD=1;;
         \?) echo "Invalid option -$OPTARG"; __help; exit 1;;
         :) echo "Option -$OPTARG requires an argument."; exit 1;;
     esac
@@ -147,6 +155,19 @@ UL_PATH+="${UL_DIR}/"
 # Append the miniskirt target for use later
 if [ $PMINI -eq 1 ]; then
     TARGETLIST=(${TARGETLIST[@]} miniskirt)
+fi
+
+# Fetch linaro toolchain
+if [ ! -d ${TOOLCHAIN_PATH} ]; then
+    mkdir -p ${TOOLCHAIN_PATH}
+    curl -k ${TOOLCHAIN_URL} > ${TOOLCHAIN_PATH}/linaro-tc.tar.bz2
+    tar -jxf ${TOOLCHAIN_PATH}/linaro-tc.tar.bz2 -C ${TOOLCHAIN_PATH}
+    rm -f ${TOOLCHAIN_PATH}/linaro-tc.tar.bz2
+fi
+# Make sure toolchain is actually there
+if [ ! -x ${TOOLCHAIN_PREFIX}gcc ]; then
+    echo "TOOLCHAIN NOT FOUND" | tee -a ~/droidbuilder/${REPORT_FILE}
+    exit 1
 fi
 
 # loop the TARGETLIST array and build all targets present
@@ -185,8 +206,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" NIGHTLY_BUILD=true"
     fi
 
-    if [ $KERNEL -eq 1 ]; then
+    if [ $KERNEL -eq 1 ] && [ $LBUILD -eq 0 ]; then
         buildargs+=" BUILD_KERNEL=true"
+    fi
+
+    if [ $LBUILD -eq 1 ]; then
+        buildargs+=" LINARO_BUILD=1 TARGET_TOOLS_PREFIX=${TOOLCHAIN_PREFIX}"
     fi
 
     echo "BUILD for: $target: args = $buildargs"
