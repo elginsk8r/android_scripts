@@ -184,7 +184,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1"
 
     echo "BUILDING: $target with $buildargs"
-    schedtool -B -n 1 -e ionice -n 1 make -j 8 $buildargs || { __fail mka $target; continue; }
+    schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { __fail mka $target; continue; }
 
     # upload
     [ $UPLOAD -eq 0 ] && continue
