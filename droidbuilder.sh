@@ -152,6 +152,9 @@ if [ $PMINI -eq 1 ]; then
     TARGETLIST=(${TARGETLIST[@]} miniskirt)
 fi
 
+# Try and avoid mixed builds
+[ $LBUILD -eq 1 ] && export USE_CCACHE=0
+
 # loop the TARGETLIST array and build all targets present
 # if a step errors the step is logged to FAILLIST and the loop
 # continues to the next item in TARGETLIST
