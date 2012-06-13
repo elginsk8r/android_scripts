@@ -88,9 +88,9 @@ function __fail() {
 
 function __calc_run_time() {
     datefinish=`date +%s`
-    timediff=$((datefinish - TIMESTART))
+    timediff=$(( datefinish - TIMESTART ))
     usedhours=$(( timediff / 3600 ))
-    usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60))
+    usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60 ))
     usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
     echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " | tee -a ~/droidbuilder/${REPORT_FILE}
 }
@@ -143,17 +143,13 @@ if [ $CLOBBER -eq 1 ]; then
 fi
 
 # Append extra path if needed
-if [ $CRONJOB -eq 1 ]; then
-    UL_PATH+="${UL_CRON_PATH}/"
-fi
+[ $CRONJOB -eq 1 ] && UL_PATH+="${UL_CRON_PATH}/"
 
 # Set full upload path now
 UL_PATH+="${UL_DIR}/"
 
 # Append the miniskirt target for use later
-if [ $PMINI -eq 1 ]; then
-    TARGETLIST=(${TARGETLIST[@]} miniskirt)
-fi
+[ $PMINI -eq 1 ] && TARGETLIST=(${TARGETLIST[@]} miniskirt)
 
 # loop the TARGETLIST array and build all targets present
 # if a step errors the step is logged to FAILLIST and the loop
@@ -172,66 +168,48 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" MINISKIRT=true"
     fi
 
-    echo  "BREAKFAST for: $target"
+    echo  "BREAKFAST: $target"
     breakfast $target || { __fail breakfast $target; continue; }
 
-    if [ $KERNEL -eq 1 ]; then
-        find_deps
-    fi
+    [ $KERNEL -eq 1 ] && find_deps
 
-    echo "CLEAN for: $target"
+    echo "CLEANING: $target"
     make clean || { __fail clean $target; continue; }
 
     # passion also gets fastboot images
-    if [ "$target" == "passion" ]; then
-        buildargs+=" fastboot_tarball"
-    fi
+    [ "$target" == "passion" ] && buildargs+=" fastboot_tarball"
 
-    if [ $NIGHTLY -eq 1 ]; then
-        buildargs+=" NIGHTLY_BUILD=true"
-    fi
+    [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
+    [ $KERNEL -eq 1 ] && buildargs+=" BUILD_KERNEL=true"
+    [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1"
 
-    if [ $KERNEL -eq 1 ]; then
-        buildargs+=" BUILD_KERNEL=true"
-    fi
-
-    if [ $LBUILD -eq 1 ]; then
-        buildargs+=" LINARO_BUILD=1"
-    fi
-
-    echo "BUILD for: $target: args = $buildargs"
+    echo "BUILDING: $target with $buildargs"
     schedtool -B -n 1 -e ionice -n 1 make -j 8 $buildargs || { __fail mka $target; continue; }
 
     # upload
-    if [ $UPLOAD -eq 1 ]; then
-
-        zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
-        # we cant upload a non existent file
-        if [ -z "$zipname" ]; then
-            __fail upload_nozipfound $target; continue
-        else
-            echo "UPLOADING $zipname"
-            rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
-        fi
-        # upload the extra passion file
-        if [ "$target" == "passion" ]; then
-            zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.tar.bz2" -print0 -quit`
-            # we cant upload a non existent file
-            if [ -z "$zipname" ]; then
-                __fail upload_notarballfound $target; continue
-            else
-                echo "UPLOADING `basename $zipname`"
-                rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
-            fi
-        fi
+    [ $UPLOAD -eq 0 ] && continue
+    zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
+    # we cant upload a non existent file
+    if [ -z "$zipname" ]; then
+        __fail upload_nozipfound $target; continue
+    else
+        echo "UPLOADING: `basename $zipname`"
+        rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
     fi
-    # end upload
+    # upload the extra passion file
+    [ "$target" == "passion" ] || continue
+    zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.tar.bz2" -print0 -quit`
+    # we cant upload a non existent file
+    if [ -z "$zipname" ]; then
+        __fail upload_notarballfound $target; continue
+    else
+        echo "UPLOADING: `basename $zipname`"
+        rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
+    fi
 done
 
 # create log directory
-if [ ! -d ~/droidbuilder ]; then
-    mkdir -p ~/droidbuilder
-fi
+[ ! -d ~/droidbuilder ] && mkdir -p ~/droidbuilder
 
 # Print all failures at the end so we actually see them!
 while [ $FAILNUM -gt 0 ]; do
@@ -241,6 +219,6 @@ done
 
 __calc_run_time
 
-echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/$GOOUSER/$UL_DIR/" | tee -a ~/droidbuilder/${REPORT_FILE}
+echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a ~/droidbuilder/${REPORT_FILE}
 
 exit
