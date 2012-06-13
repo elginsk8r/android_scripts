@@ -106,7 +106,7 @@ if [ "$1" == "help" ]; then
     __help; exit;
 fi
 
-while getopts ":ansdkhcimp:t:" opt; do
+while getopts ":ansdkhcimlp:t:" opt; do
     case $opt in
         a) ;; # noop
         n) NIGHTLY=1;;
