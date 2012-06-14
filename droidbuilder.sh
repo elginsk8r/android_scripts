@@ -72,7 +72,7 @@ Options:
 -l     linaro build
 -m     also build miniskirt (for passion only)
 -n     build nightly
--p     directory(path) for upload (appended to $UL_PATH)
+-p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
 -s     sync repo
 -t     build specified target(s)
 EOF
@@ -112,7 +112,7 @@ while getopts ":ansdkhcimlp:t:" opt; do
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
-        p) UL_DIR=$OPTARG;;
+        p) UL_DIR=${UL_DIR}-$OPTARG;;
         k) CLOBBER=1;;
         t) TARGETLIST=($OPTARG);;
         h) __help; exit;;
