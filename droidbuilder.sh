@@ -219,6 +219,6 @@ done
 
 __calc_run_time
 
-echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a ~/droidbuilder/${REPORT_FILE}
+echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_PATH}/" | tee -a ~/droidbuilder/${REPORT_FILE}
 
 exit
