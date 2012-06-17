@@ -181,7 +181,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
     [ $KERNEL -eq 1 ] && buildargs+=" BUILD_KERNEL=true"
-    [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1"
+    [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1 LINARO_OPT3=1"
 
     echo "BUILDING: $target with $buildargs"
     schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { __fail mka $target; continue; }
