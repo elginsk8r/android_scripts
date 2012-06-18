@@ -142,8 +142,8 @@ if [ $CLOBBER -eq 1 ]; then
     make clobber || __fail clobber make
 fi
 
-# Append extra path if needed
-[ $CRONJOB -eq 1 ] && UL_PATH+="${UL_CRON_PATH}/"
+# Prepend extra path if needed
+[ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
 
 # Set full upload path now
 UL_PATH+="${UL_DIR}/"
@@ -219,6 +219,6 @@ done
 
 __calc_run_time
 
-echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_PATH}/" | tee -a ~/droidbuilder/${REPORT_FILE}
+echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a ~/droidbuilder/${REPORT_FILE}
 
 exit
