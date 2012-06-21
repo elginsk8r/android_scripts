@@ -38,6 +38,7 @@ CRONJOB=0
 KERNEL=0
 PMINI=0
 LBUILD=0
+OPT3=0
 
 # dont modify
 FAILNUM=0
@@ -63,7 +64,7 @@ cat <<EOF
 Usage: `basename $0` -acdhiklmns -p <path> -t <target>|"<target> <target>"
 
 Options:
--a     build all targets
+-a     optimize a lot (depends on -l)
 -c     special case for cronjobs
 -d     dont upload
 -h     show this help
@@ -75,6 +76,10 @@ Options:
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
 -s     sync repo
 -t     build specified target(s)
+Additional Arguments:
+help   show this help
+douche no-op to get past the no args error and build with defaults
+         this is not recommended.. you should at least run -s
 EOF
 }
 
@@ -121,7 +126,7 @@ fi
 
 while getopts ":ansdkhcimlp:t:" opt; do
     case $opt in
-        a) ;; # noop
+        a) OPT3=1;;
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
@@ -192,7 +197,10 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
     [ $KERNEL -eq 1 ] && buildargs+=" BUILD_KERNEL=true"
-    [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1 LINARO_OPT3=1"
+    if [ $LBUILD -eq 1 ]; then
+        buildargs+=" LINARO_BUILD=true"
+        [ $OPT3 -eq 1 ] && buildargs+=" LINARO_OPT3=true"
+    fi
 
     echo "BUILDING: $target with $buildargs"
     schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { log_fail mka $target; continue; }
