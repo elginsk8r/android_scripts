@@ -27,7 +27,7 @@ ZIPPREFIX="Evervolv"
 SHORTVENDOR="ev"
 
 # report file
-REPORT_FILE=report-`date +%Y%m%d`
+REPORT_FILE=~/db-logs/report-`date +%Y%m%d`
 
 # for getopts
 SYNC=0
@@ -55,10 +55,10 @@ if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
     TARGETLIST=(${TARGETLIST[@]#*_})
     TARGETLIST=(${TARGETLIST[@]%-*})
 else
-    TARGETLIST=(bravo epic4gtouch inc passion ruby shooter supersonic)
+    TARGETLIST=
 fi
 
-function __help() {
+function print_help() {
 cat <<EOF
 Usage: `basename $0` -acdhiklmns -p <path> -t <target>|"<target> <target>"
 
@@ -78,32 +78,45 @@ Options:
 EOF
 }
 
-# accepts 2 args detailing the issue
-function __fail() {
+# Accepts 2 args detailing the issue
+function log_fail() {
     # increment first, item 0 will be used as the sentinal
     ((++FAILNUM))
-    FAILLIST[$FAILNUM]="$2 : failed at $1"
+    FAILLIST[$FAILNUM]="$2 failed at $1"
     echo ${FAILLIST[$FAILNUM]}
 }
 
-function __calc_run_time() {
-    datefinish=`date +%s`
-    timediff=$(( datefinish - TIMESTART ))
-    usedhours=$(( timediff / 3600 ))
-    usedminutes=$(( ( timediff - ( 3600 * usedhours ) ) / 60 ))
-    usedseconds=$(( timediff - ( 3600 * usedhours ) -  ( 60 * usedminutes ) ))
-    echo " *** Time calculation: $usedhours h, $usedminutes m, $usedseconds s *** " | tee -a ~/droidbuilder/${REPORT_FILE}
+function print_failures() {
+    while [ $FAILNUM -gt 0 ]; do
+        echo "${FAILLIST[$FAILNUM]}" | tee -a $REPORT_FILE
+        ((--FAILNUM))
+    done
+}
+
+# Up to 1 arg: 1. Error message
+function bail() {
+    [ -z "$1" ] && exit
+    echo "$1"
+    exit
+}
+
+# Requires TIMESTART=`date +%s` at beginning of file
+function calc_run_time() {
+    declare -i tf td uh um us
+    tf=`date +%s`;td=$((tf-TIMESTART));uh=$((td/3600))
+    uh=$(($((td-$((3600*uh))))/60));us=$((td-$((3600*uh))-$((60*uh))))
+    echo "BUILD TIME: ${uh}h ${uh}m ${us}s" | tee -a $REPORT_FILE
 }
 
 #
 # Start main
 #
 if [ $# -eq 0 ]; then
-    echo "This script cannot be called without arguments"; __help; exit 1;
+    echo "This script cannot be called without arguments"; print_help; bail;
 fi
 
 if [ "$1" == "help" ]; then
-    __help; exit;
+    print_help; bail;
 fi
 
 while getopts ":ansdkhcimlp:t:" opt; do
@@ -115,31 +128,29 @@ while getopts ":ansdkhcimlp:t:" opt; do
         p) UL_DIR=${UL_DIR}-$OPTARG;;
         k) CLOBBER=1;;
         t) TARGETLIST=($OPTARG);;
-        h) __help; exit;;
+        h) print_help; bail;;
         c) CRONJOB=1;;
         i) KERNEL=1;;
         m) PMINI=1;;
         l) LBUILD=1;;
-        \?) echo "Invalid option -$OPTARG"; __help; exit 1;;
-        :) echo "Option -$OPTARG requires an argument."; exit 1;;
+        \?) echo "Invalid option -$OPTARG"; print_help; bail;;
+        :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
 done
 
 # Try and avoid mixed builds
 [ $LBUILD -eq 1 ] && export USE_CCACHE=0
 
-if [ -e build/envsetup.sh ]; then
-    . build/envsetup.sh
-else
-    echo "You are not in the build tree"; exit 1;
-fi
+[ -e build/envsetup.sh ] || bail "You are not in the build tree"
+# Set env
+. build/envsetup.sh
 
 if [ $SYNC -eq 1 ]; then
-    repo sync -j16 || __fail sync repo
+    repo sync -j16 || log_fail sync repo
 fi
 
 if [ $CLOBBER -eq 1 ]; then
-    make clobber || __fail clobber make
+    make clobber || log_fail clobber make
 fi
 
 # Prepend extra path if needed
@@ -169,12 +180,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     echo  "BREAKFAST: $target"
-    breakfast $target || { __fail breakfast $target; continue; }
+    breakfast $target || { log_fail breakfast $target; continue; }
 
     [ $KERNEL -eq 1 ] && find_deps
 
     echo "CLEANING: $target"
-    make clean || { __fail clean $target; continue; }
+    make clean || { log_fail clean $target; continue; }
 
     # passion also gets fastboot images
     [ "$target" == "passion" ] && buildargs+=" fastboot_tarball"
@@ -184,41 +195,40 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     [ $LBUILD -eq 1 ] && buildargs+=" LINARO_BUILD=1 LINARO_OPT3=1"
 
     echo "BUILDING: $target with $buildargs"
-    schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { __fail mka $target; continue; }
+    schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { log_fail mka $target; continue; }
 
     # upload
     [ $UPLOAD -eq 0 ] && continue
-    zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
+    zipname=`find out/target/product/$target \
+        -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
     # we cant upload a non existent file
     if [ -z "$zipname" ]; then
-        __fail upload_nozipfound $target; continue
+        log_fail upload_nozipfound $target; continue
     else
         echo "UPLOADING: `basename $zipname`"
-        rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
+        rsync -P -e "ssh -p2222" $zipname \
+            ${GOOUSER}@${GOOHOST}:${UL_PATH} || log_fail rsync $target
     fi
     # upload the extra passion file
     [ "$target" == "passion" ] || continue
-    zipname=`find out/target/product/$target -name "${ZIPPREFIX}*${target}*.tar.bz2" -print0 -quit`
+    zipname=`find out/target/product/$target \
+        -name "${ZIPPREFIX}*${target}*.tar.bz2" -print0 -quit`
     # we cant upload a non existent file
     if [ -z "$zipname" ]; then
-        __fail upload_notarballfound $target; continue
+        log_fail upload_notarballfound $target; continue
     else
         echo "UPLOADING: `basename $zipname`"
-        rsync -P -e "ssh -p2222" $zipname ${GOOUSER}@${GOOHOST}:${UL_PATH} || __fail rsync $target
+        rsync -P -e "ssh -p2222" $zipname \
+            ${GOOUSER}@${GOOHOST}:${UL_PATH} || log_fail rsync $target
     fi
 done
 
 # create log directory
-[ ! -d ~/droidbuilder ] && mkdir -p ~/droidbuilder
+[[ ! -d `dirname $REPORTFILE` ]] && mkdir -p `dirname $REPORTFILE`
 
-# Print all failures at the end so we actually see them!
-while [ $FAILNUM -gt 0 ]; do
-    echo ${FAILLIST[$FAILNUM]} | tee -a ~/droidbuilder/${REPORT_FILE}
-    ((--FAILNUM))
-done
+print_failures
+calc_run_time
 
-__calc_run_time
-
-echo "Files were uploaded to: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a ~/droidbuilder/${REPORT_FILE}
+echo "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a $REPORT_FILE
 
 exit
