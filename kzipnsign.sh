@@ -10,6 +10,12 @@
 # this script will only copy zImage and modules to the specified directory
 # then zip that directory and sign it.
 
+if [ $# -eq 0 ]; then
+    echo "No args mate!"
+    echo "p=passion b=bravo m=updatemessage n=name"
+    exit
+fi
+
 # for getopts
 passion=0
 bravo=0
@@ -30,21 +36,13 @@ while getopts "pbm:n:" opt; do
 done
 
 if [ $passion -eq 1 ]; then
-	if [ -z "$updatemessage" ]; then
-		updatemessage="NexusOne test kernel by drewis"
-	fi
-	if [ -z "$name" ]; then
-		name=NexusOne-test-kernel-drewis
-	fi
+	[ -z "$updatemessage" ] && updatemessage="NexusOne test kernel by drewis"
+	[ -z "$name" ] && name=NexusOne-test-kernel-drewis
 fi
 
 if [ $bravo -eq 1 ]; then
-	if [ -z "$updatemessage" ]; then
-		updatemessage="HTCDesire test kernel by drewis"
-	fi
-	if [ -z "$name" ]; then
-		name=HTCDesire-test-kernel-drewis
-	fi
+	[ -z "$updatemessage" ] && updatemessage="HTCDesire test kernel by drewis"
+	[ -z "$name" ] && name=HTCDesire-test-kernel-drewis
 fi
 
 # directories: should be prexisting like: $kdir/$sdir $kdir/$zdir
