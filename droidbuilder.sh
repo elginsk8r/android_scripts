@@ -139,7 +139,7 @@ while getopts ":ansdkhcimlp:t:" opt; do
 done
 
 # Try and avoid mixed builds
-[ $LBUILD -eq 1 ] && export USE_CCACHE=0
+[ $LBUILD -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
 
 [ -e build/envsetup.sh ] || bail "You are not in the build tree"
 # Set env
