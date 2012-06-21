@@ -232,7 +232,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 done
 
 # create log directory
-[[ ! -d `dirname $REPORTFILE` ]] && mkdir -p `dirname $REPORTFILE`
+[[ ! -d `dirname $REPORT_FILE` ]] && mkdir -p `dirname $REPORT_FILE`
 
 print_failures
 calc_run_time
