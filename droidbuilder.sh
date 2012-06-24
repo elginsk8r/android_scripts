@@ -107,10 +107,10 @@ function bail() {
 
 # Requires TIMESTART=`date +%s` at beginning of file
 function calc_run_time() {
-    declare -i tf td uh um us
-    tf=`date +%s`;td=$((tf-TIMESTART));uh=$((td/3600))
-    uh=$(($((td-$((3600*uh))))/60));us=$((td-$((3600*uh))-$((60*uh))))
-    echo "BUILD TIME: ${uh}h ${uh}m ${us}s" | tee -a $REPORT_FILE
+    declare -i h_ m_ s_ f_ d_
+    f_=`date +%s`;d_=$((f_-TIMESTART));h_=$((d_/3600))
+    m_=$(($((d_-$((3600*h_))))/60));s_=$((d_-$((3600*h_))-$((60*m_))))
+    echo "BUILD TIME: ${h_}h ${m_}m ${s_}s" | tee -a $REPORT_FILE
 }
 
 #
