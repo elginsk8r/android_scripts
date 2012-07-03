@@ -39,6 +39,7 @@ KERNEL=0
 PMINI=0
 LBUILD=0
 OPT3=0
+DISABLECCACHE=0
 
 # dont modify
 FAILNUM=0
@@ -61,21 +62,22 @@ fi
 
 function print_help() {
 cat <<EOF
-Usage: `basename $0` -acdhiklmns -p <path> -t <target>|"<target> <target>"
+Usage: `basename $0` -acdhiklmnsu -p <path> -t <target>|"<target> <target>"
 
 Options:
--a     optimize a lot (depends on -l)
+-a     optimize a lot (depends on -l) *depreciated*
 -c     special case for cronjobs *implies -n*
 -d     dont upload
 -h     show this help
 -i     build kernel inline
 -k     clobber tree
--l     linaro build *disables ccache*
+-l     linaro build *implies -u*
 -m     also build miniskirt *for passion only*
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
 -s     sync repo
 -t     build specified target(s) *multiple targets must be in quotes*
+-u     disable ccache (uncached)
 Additional Arguments:
 help   show this help
 douche no-op to get past the no args error and build with defaults
@@ -124,7 +126,7 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdkhcimlp:t:" opt; do
+while getopts ":ansdkhcimlup:t:" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
@@ -137,14 +139,15 @@ while getopts ":ansdkhcimlp:t:" opt; do
         c) CRONJOB=1;NIGHTLY=1;;
         i) KERNEL=1;;
         m) PMINI=1;;
-        l) LBUILD=1;;
+        l) LBUILD=1;DISABLECCACHE=1;;
+        u) DISABLECCACHE=1;;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
         :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
 done
 
 # Try and avoid mixed builds
-[ $LBUILD -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
+[ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
 
 [ -e build/envsetup.sh ] || bail "You are not in the build tree"
 # Set env
