@@ -65,17 +65,17 @@ Usage: `basename $0` -acdhiklmns -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     optimize a lot (depends on -l)
--c     special case for cronjobs
+-c     special case for cronjobs *implies -n*
 -d     dont upload
 -h     show this help
 -i     build kernel inline
 -k     clobber tree
--l     linaro build
--m     also build miniskirt (for passion only)
+-l     linaro build *disables ccache*
+-m     also build miniskirt *for passion only*
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
 -s     sync repo
--t     build specified target(s)
+-t     build specified target(s) *multiple targets must be in quotes*
 Additional Arguments:
 help   show this help
 douche no-op to get past the no args error and build with defaults
@@ -134,7 +134,7 @@ while getopts ":ansdkhcimlp:t:" opt; do
         k) CLOBBER=1;;
         t) TARGETLIST=($OPTARG);;
         h) print_help; bail;;
-        c) CRONJOB=1;;
+        c) CRONJOB=1;NIGHTLY=1;;
         i) KERNEL=1;;
         m) PMINI=1;;
         l) LBUILD=1;;
