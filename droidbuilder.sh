@@ -80,8 +80,11 @@ Options:
 -u     disable ccache (uncached)
 Additional Arguments:
 help   show this help
-douche no-op to get past the no args error and build with defaults
-         this is not recommended.. you should at least run -s
+douche no-op to get past the no args error and build with defaults. You
+       could type anything here as long as its not any of the above. But
+       you will be a douche! Because it will build all devices we have
+       lunch combos for and render the buildbot unusable for the next 6+
+       hours. Think before you type!
 EOF
 }
 
@@ -206,7 +209,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     echo "BUILDING: $target with $buildargs"
-    schedtool -B -n 5 -e ionice -n 5 make -j 10 $buildargs || { log_fail mka $target; continue; }
+    schedtool -B -n 2 -e ionice -n 2 make -j 10 $buildargs || { log_fail mka $target; continue; }
 
     # upload
     [ $UPLOAD -eq 0 ] && continue
