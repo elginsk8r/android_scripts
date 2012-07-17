@@ -226,7 +226,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     # upload the extra passion file
     [ "$target" == "passion" ] || continue
     zipname=`find out/target/product/$target \
-        -name "${ZIPPREFIX}*${target}*.tar.bz2" -print0 -quit`
+        -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
     if [ -z "$zipname" ]; then
         log_fail upload_notarballfound $target; continue
