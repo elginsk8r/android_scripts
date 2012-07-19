@@ -62,7 +62,7 @@ fi
 
 function print_help() {
 cat <<EOF
-Usage: `basename $0` -acdhiklmnsu -p <path> -t <target>|"<target> <target>"
+Usage: `basename $0` -acdhiklmnsuw -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
@@ -78,13 +78,10 @@ Options:
 -s     sync repo
 -t     build specified target(s) *multiple targets must be in quotes*
 -u     disable ccache (uncached)
+-w     working directory (requires arg)
 Additional Arguments:
 help   show this help
-douche no-op to get past the no args error and build with defaults. You
-       could type anything here as long as its not any of the above. But
-       you will be a douche! Because it will build all devices we have
-       lunch combos for and render the buildbot unusable for the next 6+
-       hours. Think before you type!
+fuckit no-op to get past the no args error and build with defaults.
 EOF
 }
 
@@ -129,7 +126,7 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdkhcimlup:t:" opt; do
+while getopts ":ansdkhcimlup:t:w:" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
@@ -144,6 +141,7 @@ while getopts ":ansdkhcimlup:t:" opt; do
         m) PMINI=1;;
         l) LBUILD=1;DISABLECCACHE=1;;
         u) DISABLECCACHE=1;;
+        w) WORKING_DIR="$OPTARG";;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
         :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
@@ -152,6 +150,7 @@ done
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
 
+[ -n "$WORKING_DIR" ] && pushd "$WORKING_DIR"
 [ -e build/envsetup.sh ] || bail "You are not in the build tree"
 # Set env
 . build/envsetup.sh
@@ -244,5 +243,5 @@ print_failures
 calc_run_time
 
 echo "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a $REPORT_FILE
-
+[ -n "$WORKING_DIR" ] && popd
 exit
