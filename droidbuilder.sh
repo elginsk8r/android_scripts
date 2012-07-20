@@ -208,7 +208,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     echo "BUILDING: $target with $buildargs"
-    schedtool -B -n 2 -e ionice -n 2 make -j 10 $buildargs || { log_fail mka $target; continue; }
+    schedtool -B -n 2 -e ionice -n 2 make -j 16 $buildargs || { log_fail mka $target; continue; }
 
     # upload
     [ $UPLOAD -eq 0 ] && continue
