@@ -197,8 +197,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     echo "CLEANING: $target"
     make clean || { log_fail clean $target; continue; }
 
-    # passion also gets fastboot images
-    [ "$target" == "passion" ] && buildargs+=" fastboot_tarball"
+    # google devices get fastboot tarballs
+    if [ "$target" = "passion" ] || \
+       [ "$target" = "grouper" ] || \
+       [ "$target" = "toro" ]; then
+           buildargs+=" fastboot_tarball"
+    fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
     [ $KERNEL -eq 1 ] && buildargs+=" BUILD_KERNEL=true"
