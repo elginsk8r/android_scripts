@@ -46,20 +46,6 @@ FAILNUM=0
 FAILLIST=(zero)
 TIMESTART=`date +%s`
 
-
-# device array
-if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ]; then
-    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
-    # at this point every other entry is add_lunch_combo, so remove them
-    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
-    # the rest of this script relies on uniform naming, ie passion
-    # ev_passion-eng will not work so remove pre/post fixes
-    TARGETLIST=(${TARGETLIST[@]#*_})
-    TARGETLIST=(${TARGETLIST[@]%-*})
-else
-    TARGETLIST=
-fi
-
 function print_help() {
 cat <<EOF
 Usage: `basename $0` -acdhiklmnsuw -p <path> -t <target>|"<target> <target>"
@@ -154,6 +140,20 @@ done
 [ -e build/envsetup.sh ] || bail "You are not in the build tree"
 # Set env
 . build/envsetup.sh
+
+# device array
+if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ] && [ -z "$TARGETLIST" ]; then
+    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
+    # at this point every other entry is add_lunch_combo, so remove them
+    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
+    # the rest of this script relies on uniform naming, ie passion
+    # ev_passion-eng will not work so remove pre/post fixes
+    TARGETLIST=(${TARGETLIST[@]#*_})
+    TARGETLIST=(${TARGETLIST[@]%-*})
+fi
+
+# Just in case
+[ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
 
 if [ $SYNC -eq 1 ]; then
     repo sync -j16 || log_fail sync repo
