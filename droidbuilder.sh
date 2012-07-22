@@ -197,11 +197,14 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     echo "CLEANING: $target"
     make clean || { log_fail clean $target; continue; }
 
-    # google devices get fastboot tarballs
-    if [ "$target" = "passion" ] || \
-       [ "$target" = "grouper" ] || \
-       [ "$target" = "toro" ]; then
-           buildargs+=" fastboot_tarball"
+    # dont build these for cronjobs to save space
+    if [ $CRONJOB -ne 1 ]; then
+        # google devices get fastboot tarballs
+        if [ "$target" = "passion" ] || \
+           [ "$target" = "grouper" ] || \
+           [ "$target" = "toro" ]; then
+               buildargs+=" fastboot_tarball"
+        fi
     fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
