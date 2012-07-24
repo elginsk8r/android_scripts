@@ -163,10 +163,6 @@ if [ $SYNC -eq 1 ]; then
     repo sync -j16 || log_fail sync repo
 fi
 
-if [ $CLOBBER -eq 1 ]; then
-    make clobber || log_fail clobber make
-fi
-
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
 # set release upload path
@@ -199,8 +195,13 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     [ $KERNEL -eq 1 ] && find_deps
 
-    echo "CLEANING: $target"
-    make clean || { log_fail clean $target; continue; }
+    if [ $CLOBBER -eq 1 ]; then
+        echo "CLOBBERING"
+        make clobber || { log_fail clobber $target; continue; }
+    else
+        echo "CLEANING: $target"
+        make clean || { log_fail clean $target; continue; }
+    fi
 
     # dont build these for cronjobs to save space
     if [ $CRONJOB -ne 1 ]; then
