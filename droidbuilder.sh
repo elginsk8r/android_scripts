@@ -40,6 +40,7 @@ PMINI=0
 LBUILD=0
 OPT3=0
 DISABLECCACHE=0
+RELEASEBUILD=0
 
 # dont modify
 FAILNUM=0
@@ -48,7 +49,8 @@ TIMESTART=`date +%s`
 
 function print_help() {
 cat <<EOF
-Usage: `basename $0` -acdhiklmnsuw -p <path> -t <target>|"<target> <target>"
+Usage:
+  `basename $0` -acdhiklmnrsuw -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
@@ -61,6 +63,7 @@ Options:
 -m     also build miniskirt *for passion only*
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
+-r     release build *uploads to Release/<device>*
 -s     sync repo
 -t     build specified target(s) *multiple targets must be in quotes*
 -u     disable ccache (uncached)
@@ -112,7 +115,7 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdkhcimlup:t:w:" opt; do
+while getopts ":ansdkhcimlup:t:w:r" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
@@ -128,6 +131,7 @@ while getopts ":ansdkhcimlup:t:w:" opt; do
         l) LBUILD=1;DISABLECCACHE=1;;
         u) DISABLECCACHE=1;;
         w) WORKING_DIR="$OPTARG";;
+        r) RELEASEBUILD=1;;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
         :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
@@ -165,8 +169,9 @@ fi
 
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
-
-# Set full upload path now
+# set release upload path
+[ $RELEASEBUILD -eq 1 ] && UL_DIR="Releases"
+# Set full upload path now (execpt for releases which are appended later)
 UL_PATH+="${UL_DIR}/"
 
 # Append the miniskirt target for use later
@@ -215,9 +220,26 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     echo "BUILDING: $target with $buildargs"
-    schedtool -B -n 2 -e ionice -n 2 make -j 16 $buildargs || { log_fail mka $target; continue; }
+    schedtool -B -n 2 -e ionice -n 2 make -j 16 $buildargs || { log_fail make $target; continue; }
 
     # upload
+    # for releases append an extra path (this is just horrible)
+    if [ $RELEASEBUILD -eq 1 ]; then
+        case $target in
+            "bravo") DEVPATH="Desire/";;
+            "passion") DEVPATH="NexusOne/";;
+            "inc") DEVPATH="inc/";;
+            "supersonic") DEVPATH="Evo4G/";;
+            "grouper") DEVPATH="Nexus7/";;
+            "toro") DEVPATH="toro/";;
+            "shooter") DEVPATH="Evo3D/";;
+            "ruby") DEVPATH="Amaze4G/";;
+            "tenderloin") DEVPATH="TouchPad/";;
+            *) DEVPATH="";;
+        esac
+    else
+        DEVPATH="";
+    fi
     [ $UPLOAD -eq 0 ] && continue
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
@@ -227,7 +249,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     else
         echo "UPLOADING: `basename $zipname`"
         rsync -P -e "ssh -p2222" $zipname \
-            ${GOOUSER}@${GOOHOST}:${UL_PATH} || log_fail rsync $target
+            ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
     fi
     # upload the extra passion file
     [ "$target" == "passion" ] || continue
@@ -239,7 +261,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     else
         echo "UPLOADING: `basename $zipname`"
         rsync -P -e "ssh -p2222" $zipname \
-            ${GOOUSER}@${GOOHOST}:${UL_PATH} || log_fail rsync $target
+            ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
     fi
 done
 
