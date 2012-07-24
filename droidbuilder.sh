@@ -235,6 +235,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
             "shooter") DEVPATH="Evo3D/";;
             "ruby") DEVPATH="Amaze4G/";;
             "tenderloin") DEVPATH="TouchPad/";;
+            "jewel") DEVPATH="Evo4GLTE/";;
             *) DEVPATH="";;
         esac
     else
