@@ -251,18 +251,15 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
     fi
-    # upload the extra passion file
-    [ "$target" == "passion" ] || continue
+    # google devices will have a tarball
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
-    if [ -z "$zipname" ]; then
-        log_fail upload_notarballfound $target; continue
-    else
-        echo "UPLOADING: `basename $zipname`"
-        rsync -P -e "ssh -p2222" $zipname \
+    [ -z "$zipname" ] && continue
+    echo "UPLOADING: `basename $zipname`"
+    rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
-    fi
+
 done
 
 # create log directory
