@@ -203,14 +203,11 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         make clean || { log_fail clean $target; continue; }
     fi
 
-    # dont build these for cronjobs to save space
-    if [ $CRONJOB -ne 1 ]; then
-        # google devices get fastboot tarballs
-        if [ "$target" = "passion" ] || \
-           [ "$target" = "grouper" ] || \
-           [ "$target" = "toro" ]; then
-               buildargs+=" fastboot_tarball"
-        fi
+    # google devices get fastboot tarballs
+    if [ "$target" = "passion" ] || \
+       [ "$target" = "grouper" ] || \
+       [ "$target" = "toro" ]; then
+           buildargs+=" fastboot_tarball"
     fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
