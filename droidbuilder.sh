@@ -160,7 +160,7 @@ fi
 [ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
 
 if [ $SYNC -eq 1 ]; then
-    repo sync -j16 || log_fail sync repo
+    repo sync -f -j16 || log_fail sync repo
 fi
 
 # Prepend extra path if needed
