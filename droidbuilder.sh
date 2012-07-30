@@ -104,6 +104,22 @@ function calc_run_time() {
     echo "BUILD TIME: ${h_}h ${m_}m ${s_}s" | tee -a $REPORT_FILE
 }
 
+function get_changelog() {
+
+    current=`date +%Y%m%d`
+    pushd build
+    previous=`git status -bsz -u no --porcelain`
+    previous=${previous#\#\#\ }     # Too hacky?
+    popd
+    changelog="${previous}..${current}"
+    repo sync -fd -j 12
+    repo start ${current} --all
+    [ -d ./changelogs ] || mkdir ./changelogs
+    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/changelong-short-${changelog}
+    repo forall -pvc git log --no-merges ${previous}..${current} | tee ./changelogs/changelog-long-${changelog}
+    return 0
+}
+
 #
 # Start main
 #
@@ -159,9 +175,7 @@ fi
 # Just in case
 [ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
 
-if [ $SYNC -eq 1 ]; then
-    repo sync -f -j16 || log_fail sync repo
-fi
+[ $SYNC -eq 1 ] && get_changelog
 
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
