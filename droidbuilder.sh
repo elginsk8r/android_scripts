@@ -235,7 +235,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     startime=`date +%s`
 
     echo "BUILDING: $target with $buildargs" | tee -a $REPORT_FILE
-    schedtool -B -n 2 -e ionice -n 2 make -j 16 $buildargs || { log_fail make $target; continue; }
+    schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
 
     calc_run_time $startime
 
