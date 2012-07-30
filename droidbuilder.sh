@@ -108,7 +108,7 @@ function get_changelog() {
 
     current=`date +%Y%m%d`
     pushd build
-    previous=`git status -bsz -u no --porcelain`
+    previous=`git status -bsz`
     previous=${previous#\#\#\ }     # Too hacky?
     popd
     changelog="${previous}..${current}"
