@@ -115,7 +115,7 @@ function get_changelog() {
     repo sync -fd -j 12
     repo start ${current} --all
     [ -d ./changelogs ] || mkdir ./changelogs
-    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/changelong-short-${changelog}
+    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/changelog-short-${changelog}
     repo forall -pvc git log --no-merges ${previous}..${current} | tee ./changelogs/changelog-long-${changelog}
     return 0
 }
