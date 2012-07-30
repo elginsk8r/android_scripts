@@ -79,33 +79,33 @@ function log_fail() {
     # increment first, item 0 will be used as the sentinal
     ((++FAILNUM))
     FAILLIST[$FAILNUM]="$2 failed at $1"
-    echo ${FAILLIST[$FAILNUM]}
 }
 
 function print_failures() {
+    echo "START FAILURES" | tee -a $REPORT_FILE
     while [ $FAILNUM -gt 0 ]; do
         echo "${FAILLIST[$FAILNUM]}" | tee -a $REPORT_FILE
         ((--FAILNUM))
     done
+    echo "END FAILURES" | tee -a $REPORT_FILE
 }
 
 # Up to 1 arg: 1. Error message
 function bail() {
     [ -z "$1" ] && exit
-    echo "$1"
+    echo "$1" | tee -a $REPORT_FILE
     exit
 }
 
-# Requires TIMESTART=`date +%s` at beginning of file
+# Pass the starttime to it $1
 function calc_run_time() {
-    declare -i h_ m_ s_ f_ d_
-    f_=`date +%s`;d_=$((f_-TIMESTART));h_=$((d_/3600))
+    declare -i h_ m_ s_ d_ f_=`date +%s` b_=$1
+    d_=$((f_-b_));h_=$((d_/3600))
     m_=$(($((d_-$((3600*h_))))/60));s_=$((d_-$((3600*h_))-$((60*m_))))
     echo "BUILD TIME: ${h_}h ${m_}m ${s_}s" | tee -a $REPORT_FILE
 }
 
 function get_changelog() {
-
     current=`date +%Y%m%d`
     pushd build
     previous=`git status -bsz`
@@ -117,6 +117,7 @@ function get_changelog() {
     [ -d ./changelogs ] || mkdir ./changelogs
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/changelog-short-${changelog}
     repo forall -pvc git log --no-merges ${previous}..${current} | tee ./changelogs/changelog-long-${changelog}
+    echo "Created changelog ${changelog}" | tee -a $REPORT_FILE
     return 0
 }
 
@@ -204,16 +205,16 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" MINISKIRT=true"
     fi
 
-    echo  "BREAKFAST: $target"
+    echo  "BREAKFAST: $target" | tee -a $REPORT_FILE
     breakfast $target || { log_fail breakfast $target; continue; }
 
     [ $KERNEL -eq 1 ] && find_deps
 
     if [ $CLOBBER -eq 1 ]; then
-        echo "CLOBBERING"
+        echo "CLOBBERING" | tee -a $REPORT_FILE
         make clobber || { log_fail clobber $target; continue; }
     else
-        echo "CLEANING: $target"
+        echo "CLEANING: $target" | tee -a $REPORT_FILE
         make clean || { log_fail clean $target; continue; }
     fi
 
@@ -231,8 +232,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         [ $OPT3 -eq 1 ] && buildargs+=" LINARO_OPT3=true"
     fi
 
-    echo "BUILDING: $target with $buildargs"
+    startime=`date +%s`
+
+    echo "BUILDING: $target with $buildargs" | tee -a $REPORT_FILE
     schedtool -B -n 2 -e ionice -n 2 make -j 16 $buildargs || { log_fail make $target; continue; }
+
+    calc_run_time $startime
 
     # upload
     # for releases append an extra path (this is just horrible)
@@ -260,7 +265,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     if [ -z "$zipname" ]; then
         log_fail upload_nozipfound $target; continue
     else
-        echo "UPLOADING: `basename $zipname`"
+        echo "UPLOADING: `basename $zipname`" | tee -a $REPORT_FILE
         rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
     fi
@@ -269,7 +274,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
     [ -z "$zipname" ] && continue
-    echo "UPLOADING: `basename $zipname`"
+    echo "UPLOADING: `basename $zipname`" | tee -a $REPORT_FILE
     rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
 
@@ -279,7 +284,7 @@ done
 [[ ! -d `dirname $REPORT_FILE` ]] && mkdir -p `dirname $REPORT_FILE`
 
 print_failures
-calc_run_time
+calc_run_time $TIMESTART
 
 echo "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a $REPORT_FILE
 [ -n "$WORKING_DIR" ] && popd
