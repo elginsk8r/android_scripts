@@ -50,7 +50,7 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -acdhiklmnrsuw -p <path> -t <target>|"<target> <target>"
+  `basename $0` -acdhilmnrsuw -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
@@ -58,7 +58,6 @@ Options:
 -d     dont upload
 -h     show this help
 -i     build kernel inline
--k     clobber tree
 -l     linaro build *implies -u*
 -m     also build miniskirt *for passion only*
 -n     build nightly
@@ -131,14 +130,13 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdkhcimlup:t:w:r" opt; do
+while getopts ":ansdhcimlup:t:w:r" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
         p) UL_DIR=${UL_DIR}-$OPTARG;;
-        k) CLOBBER=1;;
         t) TARGETLIST=($OPTARG);;
         h) print_help; bail;;
         c) CRONJOB=1;NIGHTLY=1;;
@@ -209,13 +207,8 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     [ $KERNEL -eq 1 ] && find_deps
 
-    if [ $CLOBBER -eq 1 ]; then
-        echo "CLOBBERING" | tee -a $REPORT_FILE
-        make clobber || { log_fail clobber $target; continue; }
-    else
-        echo "CLEANING: $target" | tee -a $REPORT_FILE
-        make clean || { log_fail clean $target; continue; }
-    fi
+    echo "CLOBBERING" | tee -a $REPORT_FILE
+    make clobber || { log_fail clobber $target; continue; }
 
     # google devices get fastboot tarballs
     if [ "$target" = "passion" ] || \
@@ -278,6 +271,9 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
 
 done
+
+# cleanup
+make clobber || { log_fail clobber $target; continue; }
 
 # create log directory
 [[ ! -d `dirname $REPORT_FILE` ]] && mkdir -p `dirname $REPORT_FILE`
