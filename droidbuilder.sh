@@ -28,6 +28,8 @@ SHORTVENDOR="ev"
 
 # report file
 REPORT_FILE=~/db-logs/report-`date +%Y%m%d`
+# create log directory
+[ -d `dirname $REPORT_FILE` ] || mkdir -p `dirname $REPORT_FILE`
 
 # for getopts
 SYNC=0
@@ -80,19 +82,23 @@ function log_fail() {
     FAILLIST[$FAILNUM]="$2 failed at $1"
 }
 
+function logit() {
+    echo "$1" | tee -a $REPORT_FILE
+}
+
 function print_failures() {
-    echo "START FAILURES" | tee -a $REPORT_FILE
+    logit "START FAILURES"
     while [ $FAILNUM -gt 0 ]; do
-        echo "${FAILLIST[$FAILNUM]}" | tee -a $REPORT_FILE
+        logit "${FAILLIST[$FAILNUM]}"
         ((--FAILNUM))
     done
-    echo "END FAILURES" | tee -a $REPORT_FILE
+    logit "END FAILURES"
 }
 
 # Up to 1 arg: 1. Error message
 function bail() {
     [ -z "$1" ] && exit
-    echo "$1" | tee -a $REPORT_FILE
+    logit "$1"
     exit
 }
 
@@ -101,7 +107,7 @@ function calc_run_time() {
     declare -i h_ m_ s_ d_ f_=`date +%s` b_=$1
     d_=$((f_-b_));h_=$((d_/3600))
     m_=$(($((d_-$((3600*h_))))/60));s_=$((d_-$((3600*h_))-$((60*m_))))
-    echo "BUILD TIME: ${h_}h ${m_}m ${s_}s" | tee -a $REPORT_FILE
+    logit "BUILD TIME: ${h_}h ${m_}m ${s_}s"
 }
 
 function get_changelog() {
@@ -115,7 +121,7 @@ function get_changelog() {
     repo start ${current} --all
     [ -d ./changelogs ] || mkdir ./changelogs
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/gitlog-${changelog}.log
-    echo "Created changelog ${changelog}" | tee -a $REPORT_FILE
+    logit "Created changelog ${changelog}"
     return 0
 }
 
@@ -202,12 +208,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" MINISKIRT=true"
     fi
 
-    echo  "BREAKFAST: $target" | tee -a $REPORT_FILE
+    logit "BREAKFAST: $target"
     breakfast $target || { log_fail breakfast $target; continue; }
 
     [ $KERNEL -eq 1 ] && find_deps
 
-    echo "CLOBBERING" | tee -a $REPORT_FILE
+    logit "CLOBBERING"
     make clobber || { log_fail clobber $target; continue; }
 
     # google devices get fastboot tarballs
@@ -226,7 +232,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     startime=`date +%s`
 
-    echo "BUILDING: $target with $buildargs" | tee -a $REPORT_FILE
+    logit "BUILDING: $target with $buildargs"
     schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
 
     calc_run_time $startime
@@ -257,7 +263,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     if [ -z "$zipname" ]; then
         log_fail upload_nozipfound $target; continue
     else
-        echo "UPLOADING: `basename $zipname`" | tee -a $REPORT_FILE
+        logit "UPLOADING: `basename $zipname`"
         rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
     fi
@@ -266,7 +272,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
     [ -z "$zipname" ] && continue
-    echo "UPLOADING: `basename $zipname`" | tee -a $REPORT_FILE
+    logit "UPLOADING: `basename $zipname`"
     rsync -P -e "ssh -p2222" $zipname \
             ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
 
@@ -275,12 +281,9 @@ done
 # cleanup
 make clobber || { log_fail clobber $target; continue; }
 
-# create log directory
-[[ ! -d `dirname $REPORT_FILE` ]] && mkdir -p `dirname $REPORT_FILE`
-
 print_failures
 calc_run_time $TIMESTART
 
-echo "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/" | tee -a $REPORT_FILE
+logit "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/"
 [ -n "$WORKING_DIR" ] && popd
 exit
