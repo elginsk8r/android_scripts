@@ -251,6 +251,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
             "ruby") DEVPATH="Amaze4G/";;
             "tenderloin") DEVPATH="TouchPad/";;
             "jewel") DEVPATH="Evo4GLTE/";;
+            "speedy") DEVPATH="EvoShift4G/";;
             *) DEVPATH="";;
         esac
     else
