@@ -289,7 +289,9 @@ done
 # cleanup
 make clobber || { log_fail clobber $target; continue; }
 
-print_failures
+# dont print failures if there arent any to report
+[ ${#FAILLIST[@]} -gt 1 ] && print_failures
+
 calc_run_time $TIMESTART
 
 logit "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/"
