@@ -43,6 +43,7 @@ LBUILD=0
 OPT3=0
 DISABLECCACHE=0
 RELEASEBUILD=0
+KERNJOBS=0
 
 # dont modify
 FAILNUM=0
@@ -52,7 +53,7 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -acdhilmnrsuw -p <path> -t <target>|"<target> <target>"
+  `basename $0` -acdhilmnrsuw -j <jobs> -p <path> -t <target>|"<target> <target>"
 
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
@@ -60,6 +61,7 @@ Options:
 -d     dont upload
 -h     show this help
 -i     build kernel inline
+-j     specify the number of jobs to use for KERNEL_JOBS (depends on -i)
 -l     linaro build *implies -u*
 -m     also build miniskirt *for passion only*
 -n     build nightly
@@ -136,7 +138,7 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdhcimlup:t:w:r" opt; do
+while getopts ":ansdhcimlup:t:w:j:r" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
@@ -147,6 +149,7 @@ while getopts ":ansdhcimlup:t:w:r" opt; do
         h) print_help; bail;;
         c) CRONJOB=1;NIGHTLY=1;;
         i) KERNEL=1;;
+        j) KERNJOBS=$OPTARG;;
         m) PMINI=1;;
         l) LBUILD=1;DISABLECCACHE=1;;
         u) DISABLECCACHE=1;;
@@ -224,7 +227,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
-    [ $KERNEL -eq 1 ] && buildargs+=" BUILD_KERNEL=true"
+    if [ $KERNEL -eq 1 ];
+    then
+        buildargs+=" BUILD_KERNEL=true"
+        [ $KERNJOBS -gt 0 ] && buildargs+=" KERNEL_JOBS=$KERNJOBS"
+    fi
+
     if [ $LBUILD -eq 1 ]; then
         buildargs+=" LINARO_BUILD=true"
         [ $OPT3 -eq 1 ] && buildargs+=" LINARO_OPT3=true"
