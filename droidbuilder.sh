@@ -53,27 +53,26 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -acdhilmnrsuw -j <jobs> -p <path> -t <target>|"<target> <target>"
-
+  `basename $0` -acdhilmnrsu -t <target>|"<target> <target>"
+                  -j <jobs> -p <path> -w <workingdir>
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
--c     special case for cronjobs *implies -n*
+-c     special case for cronjobs (implies -n)
 -d     dont upload
 -h     show this help
 -i     build kernel inline
 -j     specify the number of jobs to use for KERNEL_JOBS (depends on -i)
--l     linaro build *implies -u*
--m     also build miniskirt *for passion only*
+-l     linaro build (implies -u and -i)
+-m     also build miniskirt (for passion only)
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
--r     release build *uploads to Release/<device>*
+-r     release build (uploads to Release/<device>)
 -s     sync repo
--t     build specified target(s) *multiple targets must be in quotes*
+-t     build specified target(s) (multiple targets must be in quotes)
 -u     disable ccache (uncached)
 -w     working directory (requires arg)
 Additional Arguments:
 help   show this help
-fuckit no-op to get past the no args error and build with defaults.
 EOF
 }
 
@@ -151,7 +150,7 @@ while getopts ":ansdhcimlup:t:w:j:r" opt; do
         i) KERNEL=1;;
         j) KERNJOBS=$OPTARG;;
         m) PMINI=1;;
-        l) LBUILD=1;DISABLECCACHE=1;;
+        l) LBUILD=1;DISABLECCACHE=1;KERNEL=1;;
         u) DISABLECCACHE=1;;
         w) WORKING_DIR="$OPTARG";;
         r) RELEASEBUILD=1;;
