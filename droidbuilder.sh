@@ -290,7 +290,7 @@ done
 make clobber || { log_fail clobber $target; continue; }
 
 # dont print failures if there arent any to report
-[ ${#FAILLIST[@]} -gt 1 ] && print_failures
+[ $FAILNUM -gt 0 ] && print_failures
 
 calc_run_time $TIMESTART
 
