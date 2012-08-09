@@ -18,6 +18,9 @@ UL_PATH="~/public_html/"
 # CAREFUL this directory must be pre-existing rsync wont make parents
 UL_CRON_PATH="cron"
 
+# upload dir for release builds same criteria as UL_CRON_PATH
+UL_RELEASE_PATH="Releases"
+
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
 # where $target is element of $TARGETLIST
@@ -186,7 +189,7 @@ fi
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
 # set release upload path
-[ $RELEASEBUILD -eq 1 ] && UL_DIR="Releases"
+[ $RELEASEBUILD -eq 1 ] && UL_DIR=$UL_RELEASE_PATH
 # Set full upload path now (execpt for releases which are appended later)
 UL_PATH+="${UL_DIR}/"
 
@@ -245,7 +248,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     calc_run_time $startime
 
     # upload
-    # for releases append an extra path (this is just horrible)
+    # for releases append an extra path (i wish this didnt need hardcoding)
     if [ $RELEASEBUILD -eq 1 ]; then
         case $target in
             "bravo") DEVPATH="Desire/";;
