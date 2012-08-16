@@ -4,31 +4,23 @@
 # Author: Andrew Sutherland <dr3wsuth3rland@gmail.com>
 #
 
+# set these from environment
 # assumes public ssh key in use
-GOOUSER="evervolv"
-GOOHOST="upload.goo-inside.me"
+# DROID_USER DROID_HOST
 
 # date stamped folder (override with -p)
 UL_DIR=`date +%Y%m%d`
-# upload path (must be preexisting)
-UL_PATH="~/public_html/"
-
+# upload path
+UL_PATH="~/uploads"
 # location to upload when building from a cron job
 # format $UL_PATH/$UL_CRON_PATH/$UL_DIR
-# CAREFUL this directory must be pre-existing rsync wont make parents
 UL_CRON_PATH="cron"
-
-# upload dir for release builds same criteria as UL_CRON_PATH
-UL_RELEASE_PATH="Releases"
-
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
 # where $target is element of $TARGETLIST
 ZIPPREFIX="Evervolv"
-
 # vendor path (ie /vendor/ev)
 SHORTVENDOR="ev"
-
 # report file
 REPORT_FILE=~/db-logs/report-`date +%Y%m%d`
 # create log directory
@@ -69,8 +61,8 @@ Options:
 -m     also build miniskirt (for passion only)
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
--r     release build (uploads to Release/<device>)
--s     sync repo
+-r     release build (uploads to <codename>)
+-s     sync repo (also generates changelog)
 -t     build specified target(s) (multiple targets must be in quotes)
 -u     disable ccache (uncached)
 -w     working directory (requires arg)
@@ -106,7 +98,7 @@ function bail() {
     exit
 }
 
-# Pass the starttime to it $1
+# one args: starting time
 function calc_run_time() {
     declare -i h_ m_ s_ d_ f_=`date +%s` b_=$1
     d_=$((f_-b_));h_=$((d_/3600))
@@ -114,7 +106,9 @@ function calc_run_time() {
     logit "BUILD TIME: ${h_}h ${m_}m ${s_}s"
 }
 
+# no args
 function get_changelog() {
+    local current previous changelog
     current=`date +%Y%m%d`
     pushd build
     previous=`git status -bsz`
@@ -127,6 +121,26 @@ function get_changelog() {
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/gitlog-${changelog}.log
     logit "Created changelog ${changelog}"
     return 0
+}
+
+# 2 args: local path to file, remote path
+function push_upload () {
+    local local_file=$1
+    local remote_path=$2
+    logit "UPLOADING: `basename $local_file`"
+    # create directory (i cant make rsync do parents so this is a workaround)
+    ssh -p30000 ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
+    rsync -P -e "ssh -p30000" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail rsync $target
+    
+}
+
+# one arg: board name
+function get_device_codename () {
+    local board devicedir codename
+    board=$1
+    devicedir=`find device/ -type d -name $board`
+    codename=`cat ${devicedir}/ev.mk | grep PRODUCT_CODENAME | sed -e s/\ //g -e s/PRODUCT_CODENAME\:=//`
+    DEVPATH="${codename}/"
 }
 
 #
@@ -162,6 +176,10 @@ while getopts ":ansdhcimlup:t:w:j:r" opt; do
     esac
 done
 
+# TODO allow override
+[ -z "$DROID_USER" ] && bail "DROID_USER not set for upload server"
+[ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
+
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
 
@@ -188,10 +206,8 @@ fi
 
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
-# set release upload path
-[ $RELEASEBUILD -eq 1 ] && UL_DIR=$UL_RELEASE_PATH
 # Set full upload path now (execpt for releases which are appended later)
-UL_PATH+="${UL_DIR}/"
+[ $RELEASEBUILD -eq 0 ] && UL_PATH+="${UL_DIR}/"
 
 # Append the miniskirt target for use later
 [ $PMINI -eq 1 ] && TARGETLIST=(${TARGETLIST[@]} miniskirt)
@@ -229,8 +245,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
-    if [ $KERNEL -eq 1 ];
-    then
+    if [ $KERNEL -eq 1 ]; then
         buildargs+=" BUILD_KERNEL=true"
         [ $KERNJOBS -gt 0 ] && buildargs+=" KERNEL_JOBS=$KERNJOBS"
     fi
@@ -248,55 +263,34 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     calc_run_time $startime
 
     # upload
-    # for releases append an extra path (i wish this didnt need hardcoding)
+    # for releases append an extra path
     if [ $RELEASEBUILD -eq 1 ]; then
-        case $target in
-            "bravo") DEVPATH="Desire/";;
-            "passion") DEVPATH="NexusOne/";;
-            "inc") DEVPATH="inc/";;
-            "supersonic") DEVPATH="Evo4G/";;
-            "grouper") DEVPATH="Nexus7/";;
-            "toro") DEVPATH="toro/";;
-            "shooter") DEVPATH="Evo3D/";;
-            "ruby") DEVPATH="Amaze4G/";;
-            "tenderloin") DEVPATH="TouchPad/";;
-            "jewel") DEVPATH="Evo4GLTE/";;
-            "speedy") DEVPATH="EvoShift4G/";;
-            *) DEVPATH="";;
-        esac
+        get_device_codename $target
     else
-        DEVPATH="";
+        DEVPATH=""
     fi
     [ $UPLOAD -eq 0 ] && continue
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
     # we cant upload a non existent file
-    if [ -z "$zipname" ]; then
-        log_fail upload_nozipfound $target; continue
-    else
-        logit "UPLOADING: `basename $zipname`"
-        rsync -P -e "ssh -p2222" $zipname \
-            ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
-    fi
+    [ -z "$zipname" ] && { log_fail upload nozip; continue; }
+    push_upload "$zipname" "${UL_PATH}${DEVPATH}"
     # google devices will have a tarball
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
-    [ -z "$zipname" ] && continue
-    logit "UPLOADING: `basename $zipname`"
-    rsync -P -e "ssh -p2222" $zipname \
-            ${GOOUSER}@${GOOHOST}:${UL_PATH}${DEVPATH} || log_fail rsync $target
+    [ -z "$zipname" ] && continue # fail silently
+    push_upload "$zipname" "${UL_PATH}${DEVPATH}"
 
 done
 
 # cleanup
 make clobber || { log_fail clobber $target; continue; }
 
-# dont print failures if there arent any to report
+# print failures if there are any to report
 [ $FAILNUM -gt 0 ] && print_failures
 
 calc_run_time $TIMESTART
 
-logit "Upload url: http://${GOOHOST#upload?}/devs/${GOOUSER}/${UL_DIR}/"
 [ -n "$WORKING_DIR" ] && popd
 exit
