@@ -1,13 +1,22 @@
 #!/bin/bash
 #
-# Build android for all targets present in TARGETLIST and upload to goo
+# Build android for all targets present in TARGETLIST and upload
 # Author: Andrew Sutherland <dr3wsuth3rland@gmail.com>
 #
 
-# set these from environment
-# assumes public ssh key in use
-# DROID_USER DROID_HOST
+# variables pulled from Environment
+#
+# for ssh (assumes public ssh key in use)
+# DROID_USER
+# DROID_HOST
+#
+# to keep local copies of releases something like
+# /media/NFS/releases/<codename> (codename is appended)
+# DROID_LOCAL_MIRROR
+#
 
+# GLOBALS
+#
 # date stamped folder (override with -p)
 UL_DIR=`date +%Y%m%d`
 # upload path
@@ -131,21 +140,31 @@ function push_upload () {
     # create directory (i cant make rsync do parents so this is a workaround)
     ssh -p30000 ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
     rsync -P -e "ssh -p30000" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail rsync $target
-    
 }
 
-# one arg: board name
+# one arg: board name: sets global DEVCODENAME
 function get_device_codename () {
     local board devicedir codename
     board=$1
     devicedir=`find device/ -type d -name $board`
     codename=`cat ${devicedir}/ev.mk | grep PRODUCT_CODENAME | sed -e s/\ //g -e s/PRODUCT_CODENAME\:=//`
-    DEVPATH="${codename}/"
+    DEVCODENAME="${codename}/"
+}
+
+# 2 args: local path to file, device codename
+function mirror_upload () {
+    local local_file=$1
+    local dev_codename=$2
+    local mirror_path="${DROID_LOCAL_MIRROR}/${dev_codename}"
+    [ -z "$DROID_LOCAL_MIRROR" ] && return 1
+    [ -d $mirror_path ] || mkdir -p $mirror_path
+    rsync -P ${local_file} ${mirror_path}
 }
 
 #
 # Start main
 #
+
 if [ $# -eq 0 ]; then
     echo "This script cannot be called without arguments"; print_help; bail;
 fi
@@ -245,6 +264,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
+
     if [ $KERNEL -eq 1 ]; then
         buildargs+=" BUILD_KERNEL=true"
         [ $KERNJOBS -gt 0 ] && buildargs+=" KERNEL_JOBS=$KERNJOBS"
@@ -267,20 +287,22 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     if [ $RELEASEBUILD -eq 1 ]; then
         get_device_codename $target
     else
-        DEVPATH=""
+        DEVCODENAME=""
     fi
     [ $UPLOAD -eq 0 ] && continue
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
     # we cant upload a non existent file
     [ -z "$zipname" ] && { log_fail upload nozip; continue; }
-    push_upload "$zipname" "${UL_PATH}${DEVPATH}"
+    push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
+    [ $RELEASEBUILD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
     # google devices will have a tarball
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
     [ -z "$zipname" ] && continue # fail silently
-    push_upload "$zipname" "${UL_PATH}${DEVPATH}"
+    push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
+    [ $RELEASEBUILD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
 
 done
 
