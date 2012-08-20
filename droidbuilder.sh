@@ -21,7 +21,7 @@
 # date stamped folder (override with -p)
 UL_DIR=`date +%Y%m%d`
 # upload path
-UL_PATH="~/uploads"
+UL_PATH="~/uploads/"
 # location to upload when building from a cron job
 # format $UL_PATH/$UL_CRON_PATH/$UL_DIR
 UL_CRON_PATH="cron"
