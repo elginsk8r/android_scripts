@@ -9,6 +9,7 @@
 # for ssh (assumes public ssh key in use)
 # DROID_USER
 # DROID_HOST
+# DROID_HOST_PORT (defaults to 22 if not specified)
 #
 # to keep local copies of releases something like
 # /media/NFS/releases/<codename> (codename is appended)
@@ -138,8 +139,8 @@ function push_upload () {
     local remote_path=$2
     logit "UPLOADING: `basename $local_file`"
     # create directory (i cant make rsync do parents so this is a workaround)
-    ssh -p30000 ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
-    rsync -P -e "ssh -p30000" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail rsync $target
+    ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
+    rsync -P -e "ssh -p${DROID_HOST_PORT}" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail rsync $target
 }
 
 # one arg: board name: sets global DEVCODENAME
@@ -147,7 +148,7 @@ function get_device_codename () {
     local board devicedir codename
     board=$1
     devicedir=`find device/ -type d -name $board`
-    codename=`cat ${devicedir}/ev.mk | grep PRODUCT_CODENAME | sed -e s/\ //g -e s/PRODUCT_CODENAME\:=//`
+    codename=`cat ${devicedir}/${SHORTVENDOR}.mk | grep PRODUCT_CODENAME | sed -e s/\ //g -e s/PRODUCT_CODENAME\:=//`
     DEVCODENAME="${codename}/"
 }
 
@@ -198,6 +199,7 @@ done
 # TODO allow override
 [ -z "$DROID_USER" ] && bail "DROID_USER not set for upload server"
 [ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
+[ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
 
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
