@@ -7,7 +7,7 @@ if [ $# -eq 0 ]; then
 	echo "Yikes. You must specify a board(s) (`basename $0`-h)"; exit 1;
 fi
 
-if [ -z $CROSS_COMPILE ]; then
+if [ -z "$CROSS_COMPILE" ]; then
 	echo "You need to set your environment"; exit 1;
 fi
 
@@ -41,9 +41,9 @@ EOF
 # Takes 1 arg: defconfig
 build() {
 	echo BUILDING $1
-	make mrproper
-	make $1
-	time schedtool -B -n 1 -e ionice -n 1 make -j 6
+	make mrproper &>/dev/null
+	make $1 &>/dev/null
+	time schedtool -B -n 1 -e ionice -n 1 make -j 6 &>/dev/null
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
@@ -115,4 +115,4 @@ if [ $inc -eq 1 ]; then
 fi
 
 # Cleanup our mess
-make mrproper
+make mrproper &>/dev/null
