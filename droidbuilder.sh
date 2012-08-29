@@ -196,10 +196,12 @@ while getopts ":ansdhcimlup:t:w:j:r" opt; do
     esac
 done
 
-# TODO allow override
-[ -z "$DROID_USER" ] && bail "DROID_USER not set for upload server"
-[ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
-[ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
+# TODO allow override on commandline
+if [ $UPLOAD -eq 1 ]; then
+    [ -z "$DROID_USER" ] && bail "DROID_USER not set for upload server"
+    [ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
+    [ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
+fi
 
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
