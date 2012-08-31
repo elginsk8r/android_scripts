@@ -41,9 +41,9 @@ EOF
 # Takes 1 arg: defconfig
 build() {
 	echo BUILDING $1
-	make mrproper &>/dev/null
-	make $1 &>/dev/null
-	time schedtool -B -n 1 -e ionice -n 1 make -j 6 &>/dev/null
+	make mrproper >/dev/null 2>/dev/null
+	make $1 >/dev/null 2>/dev/null
+	time schedtool -B -n 1 -e ionice -n 1 make -j 6 >/dev/null 2>/dev/null
 	if [ $? -ne 0 ]; then
 		exit 1
 	fi
@@ -115,4 +115,4 @@ if [ $inc -eq 1 ]; then
 fi
 
 # Cleanup our mess
-make mrproper &>/dev/null
+make mrproper >/dev/null 2>/dev/null

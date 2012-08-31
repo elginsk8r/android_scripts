@@ -258,7 +258,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     [ $KERNEL -eq 1 ] && find_deps
 
     logit "CLOBBERING"
-    make clobber &>/dev/null || { log_fail clobber $target; continue; }
+    make clobber >/dev/null 2>/dev/null || { log_fail clobber $target; continue; }
 
     # google devices get fastboot tarballs if this isnt a cronjob
     if [ $CRONJOB -eq 0 ]; then
@@ -284,7 +284,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     startime=`date +%s`
 
     logit "BUILDING: $target with $buildargs"
-    schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs &>/dev/null || { log_fail make $target; continue; }
+    schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>/dev/null || { log_fail make $target; continue; }
 
     calc_run_time $startime
 
@@ -313,7 +313,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 done
 
 # cleanup
-make clobber &>/dev/null || { log_fail clobber $target; continue; }
+make clobber >/dev/null 2>/dev/null || { log_fail clobber $target; continue; }
 
 # print failures if there are any to report
 [ $FAILNUM -gt 0 ] && print_failures
