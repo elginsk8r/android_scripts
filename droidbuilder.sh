@@ -337,7 +337,9 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 done
 
 # cleanup
-make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
+if [ $UPLOAD -eq 1 ]; then
+    make clobber >/dev/null 2>&1 || log_fail clobber $target
+fi
 
 # print failures if there are any to report
 [ $FAILNUM -gt 0 ] && print_failures
