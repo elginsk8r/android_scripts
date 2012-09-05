@@ -45,7 +45,6 @@ CRONJOB=0
 KERNEL=0
 PMINI=0
 LBUILD=0
-OPT3=0
 DISABLECCACHE=0
 RELEASEBUILD=0
 KERNJOBS=0
@@ -59,10 +58,9 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -acdhilmnqrsu -t <target>|"<target> <target>"
+  `basename $0` -cdhilmnqrsu -t <target>|"<target> <target>"
                   -j <jobs> -p <path> -w <workingdir>
 Options:
--a     optimize a lot (depends on -l) *depreciated*
 -c     special case for cronjobs (implies -n)
 -d     dont upload
 -h     show this help
@@ -193,9 +191,8 @@ if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdhcimlup:t:w:j:rq" opt; do
+while getopts ":nsdhcimlup:t:w:j:rq" opt; do
     case $opt in
-        a) OPT3=1;;
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
@@ -298,7 +295,6 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     if [ $LBUILD -eq 1 ]; then
         buildargs+=" LINARO_BUILD=true"
-        [ $OPT3 -eq 1 ] && buildargs+=" LINARO_OPT3=true"
     fi
 
     startime=`date +%s`
