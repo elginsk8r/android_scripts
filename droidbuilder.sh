@@ -228,7 +228,7 @@ fi
 [ -n "$WORKING_DIR" ] && pushd "$WORKING_DIR"
 [ -e build/envsetup.sh ] || bail "You are not in the build tree"
 # Set env
-. build/envsetup.sh
+. build/envsetup.sh >/dev/null 2>&1
 
 # device array
 if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ] && [ -z "$TARGETLIST" ]; then
@@ -272,7 +272,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     fi
 
     logit "BREAKFAST: $target"
-    breakfast $target || { log_fail breakfast $target; continue; }
+    breakfast $target >/dev/null 2>&1 || { log_fail breakfast $target; continue; }
 
     [ $KERNEL -eq 1 ] && find_deps
 
