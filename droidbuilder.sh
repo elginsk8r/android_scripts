@@ -188,7 +188,7 @@ if [ $# -eq 0 ]; then
     echo "This script cannot be called without arguments"; print_help; bail;
 fi
 
-if [ "$1" == "help" ]; then
+if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
@@ -266,7 +266,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     # the miniskirt target is not valid it is merely used to
     # append the MINISKIRT build arg and needs to be redefined
     # properly as passion
-    if [ "$target" == "miniskirt" ]; then
+    if [ "$target" = "miniskirt" ]; then
         target="passion"
         buildargs+=" MINISKIRT=true"
     fi
