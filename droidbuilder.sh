@@ -49,6 +49,7 @@ OPT3=0
 DISABLECCACHE=0
 RELEASEBUILD=0
 KERNJOBS=0
+QUIET=0
 
 # dont modify
 FAILNUM=0
@@ -58,7 +59,7 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -acdhilmnrsu -t <target>|"<target> <target>"
+  `basename $0` -acdhilmnqrsu -t <target>|"<target> <target>"
                   -j <jobs> -p <path> -w <workingdir>
 Options:
 -a     optimize a lot (depends on -l) *depreciated*
@@ -71,6 +72,7 @@ Options:
 -m     also build miniskirt (for passion only)
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
+-q     route build output to /dev/null
 -r     release build (uploads to <codename>)
 -s     sync repo (also generates changelog)
 -t     build specified target(s) (multiple targets must be in quotes)
@@ -162,6 +164,22 @@ function mirror_upload () {
     rsync -P ${local_file} ${mirror_path}
 }
 
+# req $1: pid, opt $2: message
+function spinner() {
+    local pid=$1
+    local delay=0.75
+    local spinstr='|/-\'
+    echo -n $2 " "
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+}
+
 #
 # Start main
 #
@@ -174,7 +192,7 @@ if [ "$1" == "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":ansdhcimlup:t:w:j:r" opt; do
+while getopts ":ansdhcimlup:t:w:j:rq" opt; do
     case $opt in
         a) OPT3=1;;
         n) NIGHTLY=1;;
@@ -191,6 +209,7 @@ while getopts ":ansdhcimlup:t:w:j:r" opt; do
         u) DISABLECCACHE=1;;
         w) WORKING_DIR="$OPTARG";;
         r) RELEASEBUILD=1;;
+        q) QUIET=1;;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
         :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
@@ -258,7 +277,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     [ $KERNEL -eq 1 ] && find_deps
 
     logit "CLOBBERING"
-    make clobber >/dev/null 2>/dev/null || { log_fail clobber $target; continue; }
+    make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
 
     # google devices get fastboot tarballs if this isnt a cronjob
     if [ $CRONJOB -eq 0 ]; then
@@ -284,7 +303,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     startime=`date +%s`
 
     logit "BUILDING: $target with $buildargs"
-    schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>/dev/null || { log_fail make $target; continue; }
+    if [ $QUIET -eq 1 ]; then
+        ( schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>&1 ) &
+        spinner $! "If you need something to do... watch this spinner:"
+    else
+        schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
+    fi
 
     calc_run_time $startime
 
@@ -313,7 +337,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 done
 
 # cleanup
-make clobber >/dev/null 2>/dev/null || { log_fail clobber $target; continue; }
+make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
 
 # print failures if there are any to report
 [ $FAILNUM -gt 0 ] && print_failures
