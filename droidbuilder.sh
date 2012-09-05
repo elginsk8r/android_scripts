@@ -167,9 +167,9 @@ function mirror_upload () {
 # req $1: pid, opt $2: message
 function spinner() {
     local pid=$1
-    local delay=0.75
+    local delay=0.6
     local spinstr='|/-\'
-    echo -n $2 " "
+    printf "$2\t"
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
         printf " [%c]  " "$spinstr"
@@ -178,6 +178,7 @@ function spinner() {
         printf "\b\b\b\b\b\b"
     done
     printf "    \b\b\b\b"
+    printf "\n"
 }
 
 #
@@ -305,7 +306,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     logit "BUILDING: $target with $buildargs"
     if [ $QUIET -eq 1 ]; then
         ( schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>&1 ) &
-        spinner $! "If you need something to do... watch this spinner:"
+        spinner $! "Working..."
     else
         schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
     fi
