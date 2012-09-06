@@ -49,6 +49,7 @@ DISABLECCACHE=0
 RELEASEBUILD=0
 KERNJOBS=0
 QUIET=0
+MIRRORUPLOAD=0
 
 # dont modify
 FAILNUM=0
@@ -71,11 +72,12 @@ Options:
 -n     build nightly
 -p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
 -q     route build output to /dev/null
--r     release build (uploads to <codename>)
+-r     release build (uploads to <codename>) (implies -z)
 -s     sync repo (also generates changelog)
 -t     build specified target(s) (multiple targets must be in quotes)
 -u     disable ccache (uncached)
 -w     working directory (requires arg)
+-z     mirror upload locally
 Additional Arguments:
 help   show this help
 EOF
@@ -191,7 +193,7 @@ if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":nsdhcimlup:t:w:j:rq" opt; do
+while getopts ":nsdhcimlup:t:w:j:rqz" opt; do
     case $opt in
         n) NIGHTLY=1;;
         s) SYNC=1;;
@@ -206,8 +208,9 @@ while getopts ":nsdhcimlup:t:w:j:rq" opt; do
         l) LBUILD=1;DISABLECCACHE=1;KERNEL=1;;
         u) DISABLECCACHE=1;;
         w) WORKING_DIR="$OPTARG";;
-        r) RELEASEBUILD=1;;
+        r) RELEASEBUILD=1;MIRRORUPLOAD=1;;
         q) QUIET=1;;
+        z) MIRRORUPLOAD=1;;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
         :) echo "Option -$OPTARG requires an argument."; bail;;
     esac
@@ -219,6 +222,7 @@ if [ $UPLOAD -eq 1 ]; then
     [ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
     [ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
 fi
+[ $MIRRORUPLOAD -eq 1 ] && [ -z "$DROID_LOCAL_MIRROR" ] && bail "DROID_LOCAL_MIRROR not set"
 
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
@@ -322,14 +326,14 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     # we cant upload a non existent file
     [ -z "$zipname" ] && { log_fail upload nozip; continue; }
     push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
-    [ $RELEASEBUILD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
+    [ $MIRRORUPLOAD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
     # google devices will have a tarball
     zipname=`find out/target/product/$target \
         -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
     # we cant upload a non existent file
     [ -z "$zipname" ] && continue # fail silently
     push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
-    [ $RELEASEBUILD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
+    [ $MIRRORUPLOAD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
 
 done
 
