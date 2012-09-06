@@ -158,8 +158,12 @@ function get_device_codename () {
 function mirror_upload () {
     local local_file=$1
     local dev_codename=$2
-    local mirror_path="${DROID_LOCAL_MIRROR}/${dev_codename}"
-    [ -z "$DROID_LOCAL_MIRROR" ] && return 1
+    if [ $RELEASEBUILD -eq 1 ]; then
+        local mirror_path="${DROID_LOCAL_MIRROR}/${dev_codename}"
+    else
+        local mirror_path="${DROID_LOCAL_MIRROR}/${UL_DIR}"
+    fi
+    [ -z "$DROID_LOCAL_MIRROR" ] && logit "DROID_LOCAL_MIRROR not set" && return
     [ -d $mirror_path ] || mkdir -p $mirror_path
     rsync -P ${local_file} ${mirror_path}
 }
@@ -222,7 +226,6 @@ if [ $UPLOAD -eq 1 ]; then
     [ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
     [ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
 fi
-[ $MIRRORUPLOAD -eq 1 ] && [ -z "$DROID_LOCAL_MIRROR" ] && bail "DROID_LOCAL_MIRROR not set"
 
 # Try and avoid mixed builds
 [ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
