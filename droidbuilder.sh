@@ -171,18 +171,21 @@ function mirror_upload () {
 # req $1: pid, opt $2: message
 function spinner() {
     local pid=$1
-    local delay=0.6
+    local delay=0.5
     local spinstr='|/-\'
+    declare -i b_=`date +%s`
     printf "$2\t"
     while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
         local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
+        declare -i h_ m_ s_ d_ f_=`date +%s`
+        d_=$((f_-b_));h_=$((d_/3600))
+        m_=$(($((d_-$((3600*h_))))/60));s_=$((d_-$((3600*h_))-$((60*m_))))
+        printf "%02d:%02d [%c]  " $m_ $s_ "$spinstr"
         local spinstr=$temp${spinstr%"$temp"}
         sleep $delay
-        printf "\b\b\b\b\b\b"
+        printf "\b\b\b\b\b\b\b\b\b\b\b"
     done
-    printf "    \b\b\b\b"
-    printf "\n"
+    printf "    \b\b\b\b\n"
 }
 
 #
