@@ -140,18 +140,16 @@ function get_changelog() {
 # 1 arg: path to local changelog
 function generate_html_changelog () {
     local readfile=$1
-    local changelog=$(basename $readfile)
     local htmlfile=$(mktemp -d)/changelog.html
     cat <<EOF > $htmlfile
 <!DOCTYPE html>
 <html><body>
-<h1>Changelog: ${changelog#gitlog-}</h1>
+<h2>$(basename $readfile)</h2>
 <p>$(cat $readfile | sed ':a;N;$!ba;s/\n/\<br\>/g')</p>
 </body></html>
 EOF
     test $UPLOAD -eq 1 && push_upload $htmlfile $UL_PATH
-    cat $htmlfile
-    rm $htmlfile
+    rm -r $(dirname $htmlfile)
 }
 
 # 2 args: local path to file, remote path
