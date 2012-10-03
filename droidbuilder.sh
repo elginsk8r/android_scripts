@@ -120,19 +120,38 @@ function calc_run_time() {
 
 # no args
 function get_changelog() {
-    local current previous changelog
+    local current previous changelog changelogfile
     current=`date +%Y%m%d`
     pushd build
     previous=`git status -bsz`
     previous=${previous#\#\#\ }     # Too hacky?
     popd
+    test "$previous" = "(no branch)" && return 1
     changelog="${previous}..${current}"
     repo sync -fd -j 12
     repo start ${current} --all
     [ -d ./changelogs ] || mkdir ./changelogs
-    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee ./changelogs/gitlog-${changelog}.log
+    changelogfile=changelogs/gitlog-${changelog}.log
+    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee $changelogfile
     logit "Created changelog ${changelog}"
-    return 0
+    test $CRONJOB -eq 1 && generate_html_changelog $changelogfile
+}
+
+# 1 arg: path to local changelog
+function generate_html_changelog () {
+    local readfile=$1
+    local changelog=$(basename $readfile)
+    local htmlfile=$(mktemp -d)/changelog.html
+    cat <<EOF > $htmlfile
+<!DOCTYPE html>
+<html><body>
+<h1>Changelog: ${changelog#gitlog-}</h1>
+<p>$(cat $readfile | sed ':a;N;$!ba;s/\n/\<br\>/g')</p>
+</body></html>
+EOF
+    test $UPLOAD -eq 1 && push_upload $htmlfile $UL_PATH
+    cat $htmlfile
+    rm $htmlfile
 }
 
 # 2 args: local path to file, remote path
@@ -252,8 +271,6 @@ fi
 # Just in case
 [ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
 
-[ $SYNC -eq 1 ] && get_changelog
-
 # Prepend extra path if needed
 [ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
 # Set full upload path now (execpt for releases which are appended later)
@@ -261,6 +278,8 @@ fi
 
 # Append the miniskirt target for use later
 [ $PMINI -eq 1 ] && TARGETLIST=(${TARGETLIST[@]} miniskirt)
+
+test $SYNC -eq 1 && get_changelog
 
 # loop the TARGETLIST array and build all targets present
 # if a step errors the step is logged to FAILLIST and the loop
