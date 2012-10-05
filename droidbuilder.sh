@@ -128,11 +128,12 @@ function get_changelog() {
     popd
     test "$previous" = "(no branch)" && return 1
     changelog="${previous}..${current}"
-    repo sync -fd -j 12
-    repo start ${current} --all
-    [ -d ./changelogs ] || mkdir ./changelogs
+    test -d changelogs || mkdir changelogs
     changelogfile=changelogs/gitlog-${changelog}.log
-    repo forall -pvc git log --oneline --no-merges ${previous}..${current} | tee $changelogfile
+    echo -n > $changelogfile # zero out
+    repo sync -fd -j 12 || echo "Sync failed" > $changelogfile
+    repo start ${current} --all
+    repo forall -pvc git log --oneline --no-merges ${previous}..${current} >> $changelogfile
     logit "Created changelog ${changelog}"
     test $CRONJOB -eq 1 && generate_html_changelog $changelogfile
 }
