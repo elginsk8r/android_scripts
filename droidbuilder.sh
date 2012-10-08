@@ -19,7 +19,7 @@
 # GLOBALS
 #
 # date stamped folder (override with -p)
-UL_DIR=`date +%Y%m%d`
+UL_DIR=`date +%Y.%m.%d`
 # upload path
 UL_PATH="~/uploads/"
 # location to upload when building from a cron job
@@ -160,7 +160,7 @@ function push_upload () {
     logit "UPLOADING: `basename $local_file`"
     # create directory (i cant make rsync do parents so this is a workaround)
     ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
-    rsync -P -e "ssh -p${DROID_HOST_PORT}" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail rsync $target
+    rsync -P -e "ssh -p${DROID_HOST_PORT}" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail uploading $target
 }
 
 # one arg: board name: sets global DEVCODENAME
@@ -183,7 +183,8 @@ function mirror_upload () {
     fi
     [ -z "$DROID_LOCAL_MIRROR" ] && logit "DROID_LOCAL_MIRROR not set" && return
     [ -d $mirror_path ] || mkdir -p $mirror_path
-    rsync -P ${local_file} ${mirror_path}
+    logit "MIRRORING: $(basename $local_file)"
+    rsync -P ${local_file} ${mirror_path} || log_fail mirroring $target
 }
 
 # req $1: pid, opt $2: message
