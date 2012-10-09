@@ -11,7 +11,7 @@ import os
 import time
 import shutil
 
-numdays = 86400*14 # 2 weeks
+numdays = 86400*22 # 3 weeks
 now = time.time()
 script, directory = argv
 for r,d,f in os.walk(directory):
