@@ -18,8 +18,10 @@
 
 # GLOBALS
 #
+# date Y.M.D
+DATE=$(date +%Y.%m.%d)
 # date stamped folder (override with -p)
-UL_DIR=`date +%Y.%m.%d`
+UL_DIR=$DATE
 # upload path
 UL_PATH="~/uploads/"
 # location to upload when building from a cron job
@@ -32,7 +34,7 @@ ZIPPREFIX="Evervolv"
 # vendor path (ie /vendor/ev)
 SHORTVENDOR="ev"
 # report file
-REPORT_FILE=~/db-logs/report-`date +%Y%m%d`
+REPORT_FILE=./db-logs/buildlog-${DATE}.log
 # create log directory
 [ -d `dirname $REPORT_FILE` ] || mkdir -p `dirname $REPORT_FILE`
 
@@ -121,7 +123,7 @@ function calc_run_time() {
 # no args
 function get_changelog() {
     local current previous changelog changelogfile
-    current=`date +%Y%m%d`
+    current=$DATE
     pushd build
     previous=`git status -bsz`
     previous=${previous#\#\#\ }     # Too hacky?
@@ -142,6 +144,21 @@ function get_changelog() {
 function generate_html_changelog () {
     local readfile=$1
     local htmlfile=$(mktemp -d)/changelog.html
+    cat <<EOF > $htmlfile
+<!DOCTYPE html>
+<html><body>
+<h2>$(basename $readfile)</h2>
+<p>$(cat $readfile | sed ':a;N;$!ba;s/\n/\<br\>/g')</p>
+</body></html>
+EOF
+    test $UPLOAD -eq 1 && push_upload $htmlfile $UL_PATH
+    rm -r $(dirname $htmlfile)
+}
+
+# 1 arg: path to local buildlog
+function generate_html_buildlog () {
+    local readfile=$1
+    local htmlfile=$(mktemp -d)/buildlog.html
     cat <<EOF > $htmlfile
 <!DOCTYPE html>
 <html><body>
@@ -371,6 +388,10 @@ fi
 [ $FAILNUM -gt 0 ] && print_failures
 
 calc_run_time $TIMESTART
+
+# copy build log
+test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE $DEVCODENAME
+test $CRONJOB -eq 1 && generate_html_buildlog $REPORT_FILE
 
 [ -n "$WORKING_DIR" ] && popd
 exit
