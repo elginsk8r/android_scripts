@@ -138,7 +138,7 @@ function get_changelog() {
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} >> $changelogfile
     logit "Created changelog ${changelog}"
     test $CRONJOB -eq 1 && generate_html_changelog $changelogfile
-    test $MIRRORUPLOAD -eq 1 && mirror_upload $changelog
+    test $MIRRORUPLOAD -eq 1 && test $CRONJOB -eq 1 && mirror_upload $changelogfile
 }
 
 # 1 arg: path to local changelog
