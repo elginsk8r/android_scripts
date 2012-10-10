@@ -34,7 +34,7 @@ ZIPPREFIX="Evervolv"
 # vendor path (ie /vendor/ev)
 SHORTVENDOR="ev"
 # report file
-REPORT_FILE=./db-logs/buildlog-${DATE}.log
+REPORT_FILE=~/db-logs/buildlog-${DATE}.log
 # create log directory
 [ -d `dirname $REPORT_FILE` ] || mkdir -p `dirname $REPORT_FILE`
 
@@ -138,6 +138,7 @@ function get_changelog() {
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} >> $changelogfile
     logit "Created changelog ${changelog}"
     test $CRONJOB -eq 1 && generate_html_changelog $changelogfile
+    test $MIRRORUPLOAD -eq 1 && mirror_upload $changelog
 }
 
 # 1 arg: path to local changelog
@@ -390,7 +391,7 @@ fi
 calc_run_time $TIMESTART
 
 # copy build log
-test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE $DEVCODENAME
+test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE
 test $CRONJOB -eq 1 && generate_html_buildlog $REPORT_FILE
 
 [ -n "$WORKING_DIR" ] && popd
