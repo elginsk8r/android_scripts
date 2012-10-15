@@ -112,12 +112,14 @@ function bail() {
     exit
 }
 
-# one args: starting time
+# args: starting time, message
 function calc_run_time() {
     declare -i h_ m_ s_ d_ f_=`date +%s` b_=$1
+    local message="$2"
+    test "$message" || message="Run time"
     d_=$((f_-b_));h_=$((d_/3600))
     m_=$(($((d_-$((3600*h_))))/60));s_=$((d_-$((3600*h_))-$((60*m_))))
-    logit "BUILD TIME: ${h_}h ${m_}m ${s_}s"
+    logit "$message ${h_}h ${m_}m ${s_}s"
 }
 
 # no args
@@ -175,7 +177,7 @@ EOF
 function push_upload () {
     local local_file=$1
     local remote_path=$2
-    logit "UPLOADING: `basename $local_file`"
+    logit "Uploading $(basename $local_file)"
     # create directory (i cant make rsync do parents so this is a workaround)
     ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} \[ -d ${remote_path} \] \|\| mkdir -p ${remote_path}
     rsync -P -e "ssh -p${DROID_HOST_PORT}" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail uploading $target
@@ -201,7 +203,7 @@ function mirror_upload () {
     fi
     [ -z "$DROID_LOCAL_MIRROR" ] && logit "DROID_LOCAL_MIRROR not set" && return
     [ -d $mirror_path ] || mkdir -p $mirror_path
-    logit "MIRRORING: $(basename $local_file)"
+    logit "Mirroring $(basename $local_file)"
     rsync -P ${local_file} ${mirror_path} || log_fail mirroring $target
 }
 
@@ -316,12 +318,12 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         buildargs+=" MINISKIRT=true"
     fi
 
-    logit "BREAKFAST: $target"
+    logit "++Start building $target"
     breakfast $target >/dev/null 2>&1 || { log_fail breakfast $target; continue; }
 
     [ $KERNEL -eq 1 ] && find_deps
 
-    logit "CLOBBERING"
+    test $CRONJOB -eq 0 && logit "Cleaning"
     make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
 
     # passion gets the extra package
@@ -340,7 +342,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     startime=`date +%s`
 
-    logit "BUILDING: $target with $buildargs"
+    logit "Make with: $buildargs"
     if [ $QUIET -eq 1 ]; then
         ( schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>&1 ) &
         spinner $! "Working..."
@@ -348,7 +350,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
     fi
 
-    calc_run_time $startime
+    calc_run_time $startime "--End building"
 
     # upload
     # for releases append an extra path
