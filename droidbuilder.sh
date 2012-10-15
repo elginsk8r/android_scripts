@@ -324,14 +324,8 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     logit "CLOBBERING"
     make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
 
-    # google devices get fastboot tarballs if this isnt a cronjob
-    if [ $CRONJOB -eq 0 ]; then
-        if [ "$target" = "grouper" ] || [ "$target" = "toro" ]; then
-               buildargs+=" fastboot_tarball"
-        fi
-    fi
-    # passion gets tarballs regardless
-    [ "$target" = "passion" ] && buildargs+=" fastboot_tarball"
+    # passion gets the extra package
+    test "$target" = "passion" && buildargs+=" systemupdatepackage"
 
     [ $NIGHTLY -eq 1 ] && buildargs+=" NIGHTLY_BUILD=true"
 
