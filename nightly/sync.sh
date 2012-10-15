@@ -5,8 +5,7 @@ write_log () {
 }
 
 get_changelog () {
-    local changelogfile=$1
-    local current previous changelog
+    local current previous changelog changelogfile=$1
     current=$(date +%Y.%m.%d)
     pushd build >/dev/null 2>&1
     previous=$(git status -bsz)

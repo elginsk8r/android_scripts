@@ -29,8 +29,8 @@ function mirror_build () {
     return 0
 }
 
-test "$DROID_USER"      || exit 1
-test "$DROID_HOST"      || exit 1
+test "$DROID_USER" || exit 1
+test "$DROID_HOST" || exit 1
 test "$DROID_HOST_PORT" || DROID_HOST_PORT=22
 
 upload_build $EV_NIGHTLY_TARGET $EV_UPLOAD_PATH

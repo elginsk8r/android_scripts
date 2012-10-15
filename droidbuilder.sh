@@ -360,19 +360,11 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
         DEVCODENAME=""
     fi
     [ $UPLOAD -eq 0 ] && continue
-    zipname=`find out/target/product/$target \
-        -name "${ZIPPREFIX}*${target}*.zip" -print0 -quit`
-    # we cant upload a non existent file
-    [ -z "$zipname" ] && { log_fail upload nozip; continue; }
-    push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
-    [ $MIRRORUPLOAD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
-    # google devices will have a tarball
-    zipname=`find out/target/product/$target \
-        -name "${ZIPPREFIX}*${target}*.tar.xz" -print0 -quit`
-    # we cant upload a non existent file
-    [ -z "$zipname" ] && continue # fail silently
-    push_upload "$zipname" "${UL_PATH}${DEVCODENAME}"
-    [ $MIRRORUPLOAD -eq 1 ] && mirror_upload $zipname $DEVCODENAME
+    zips="$(find out/target/product/$target -name ${ZIPPREFIX}*.zip)"
+    for zipfile in $zips; do
+        push_upload "$zipfile" "${UL_PATH}${DEVCODENAME}"
+        test $MIRRORUPLOAD -eq 1 && mirror_upload "$zipfile" "$DEVCODENAME"
+    done
 
 done
 
