@@ -382,5 +382,10 @@ calc_run_time $TIMESTART
 test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE
 test $CRONJOB -eq 1 && generate_html_buildlog $REPORT_FILE
 
+# run postupload to recreate the index and include the new directory
+if [ $CRONJOB -eq 1 ]; then
+    ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} "test -e ~/postupload.py && python ~/postupload.py ~/uploads/cron"
+fi
+
 [ -n "$WORKING_DIR" ] && popd
 exit
