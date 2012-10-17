@@ -22,6 +22,8 @@ parser.add_argument('target', help="Device(s) to build",
                     action='append')
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
+parser.add_argument('--nosync', help="Don't sync or create changelog, for testing",
+                    action="store_true")
 args = parser.parse_args()
 
 # cd working dir
@@ -59,7 +61,8 @@ droidhost = os.getenv('DROID_HOST')
 localmirror = os.getenv('DROID_LOCAL_MIRROR')
 
 # sync the tree
-subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
+if args.nosync == False:
+    subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
 
 # build each target
 for target in args.target:
@@ -76,7 +79,7 @@ if os.path.exists(changelogfile):
     cl.addbody(clbody[1:])
     cl.write(htmlchangelogfile)
 # create html buildlog
-if os.path.exists(buildlogfile):
+if os.path.exists(logfile):
     bl = html.Create()
     bl.addtitle('Buildlog')
     bl.addheader(DATE)
