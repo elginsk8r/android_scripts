@@ -30,7 +30,7 @@ hbody += '    <li><a href="..">Go Back</a></br></li>\n'
 
 for dirname in dirlist:
     if os.path.isdir(os.path.join(directory, dirname)):
-        hbody += '    <li><a href="%s">%s</a><br></li>\n' % (dirname, dirname)
+        hbody += '    <li><a href="%s" onClick="_gaq.push([\'_trackEvent\', \'NightlyClick\', \'%s\']);">%s</a><br></li>\n' % (dirname, dirname, dirname)
 
 hbody += '</ul>\n'
 
