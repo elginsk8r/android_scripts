@@ -72,16 +72,18 @@ for target in args.target:
     # find, upload and mirror the zips
     # TODO: copy the files out and upload asyncronously while continuing to
     #       build other targets
+    subprocess.call(['ssh', droiduser + '@' + droidhost, 'test -d ' + uploadpath + ' || mkdir -p ' + uploadpath])
     zips = []
-    for files in os.listdir(os.path.join('out', 'target', 'product', target)):
+    targetoutdir = os.path.join('out', 'target', 'product', target)
+    for files in os.listdir(targetoutdir):
         if files.startswith('Evervolv') and files.endswith('.zip'):
             zips.append(files)
     if zips and droiduser and droidhost:
         for zipfile in zips:
-            subprocess.call(['rsync', '-P', zipfile, droiduser + '@' + droidhost + ':' + uploadpath ])
+            subprocess.call(['rsync', '-P', os.path.join(targetoutdir, zipfile), droiduser + '@' + droidhost + ':' + uploadpath ])
     if zips and localmirror:
         for zipfile in zips:
-            subprocess.call(['rsync', '-P', zipfile, os.path.join(localmirror, mirrorpath)])
+            subprocess.call(['rsync', '-P', os.path.join(targetoutdir, zipfile), os.path.join(localmirror, mirrorpath)])
 
 # create html changelog
 if os.path.exists(changelogfile):
@@ -100,10 +102,16 @@ if os.path.exists(logfile):
     bl.write(htmllogfile)
 # upload the html files
 if droiduser and droidhost:
-    subprocess.call(['rsync', '-P', htmllogfile, htmlchangelogfile, droiduser + '@' + droidhost + ':' + uploadpath ])
+    if os.path.exists(htmllogfile):
+        subprocess.call(['rsync', '-P', htmllogfile, droiduser + '@' + droidhost + ':' + uploadpath ])
+    if os.path.exists(htmlchangelogfile):
+        subprocess.call(['rsync', '-P', htmlchangelogfile, droiduser + '@' + droidhost + ':' + uploadpath ])
 # mirror the log files
 if localmirror:
-    subprocess.call(['rsync', '-P', logfile, changelogfile, os.path.join(localmirror, mirrorpath)])
+    if os.path.exists(logfile):
+        subprocess.call(['rsync', '-P', logfile, os.path.join(localmirror, mirrorpath)])
+    if os.path.exists(changelogfile):
+        subprocess.call(['rsync', '-P', changelogfile, os.path.join(localmirror, mirrorpath)])
 
 # run postupload script
 subprocess.call(['ssh', droiduser + '@' + droidhost, 'test -e ~/postupload.py && python ~/postupload.py ~/uploads/cron'])
