@@ -26,6 +26,12 @@ parser.add_argument('--nosync', help="Don't sync or create changelog, for testin
                     action="store_true")
 args = parser.parse_args()
 
+# fuctions
+def writeLog(logfile, message):
+    with open(logfile, 'a') as f:
+        f.write(message + '\n')
+    f.close()
+
 # cd working dir
 previous_working_dir = os.getcwd()
 os.chdir(args.source)
@@ -81,9 +87,13 @@ for target in args.target:
     if zips and droiduser and droidhost:
         for zipfile in zips:
             subprocess.call(['rsync', '-P', os.path.join(targetoutdir, zipfile), droiduser + '@' + droidhost + ':' + uploadpath ])
+    else:
+        writeLog(logfile, 'Skipping upload')
     if zips and localmirror:
         for zipfile in zips:
             subprocess.call(['rsync', '-P', os.path.join(targetoutdir, zipfile), os.path.join(localmirror, mirrorpath)])
+    else:
+        writeLog(logfile, 'Skipping mirroring')
 
 # create html changelog
 if os.path.exists(changelogfile):
