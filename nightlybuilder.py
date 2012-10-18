@@ -30,7 +30,6 @@ args = parser.parse_args()
 def writeLog(logfile, message):
     with open(logfile, 'a') as f:
         f.write(message + '\n')
-    f.close()
 
 # cd working dir
 previous_working_dir = os.getcwd()
@@ -86,6 +85,7 @@ for target in args.target:
             zips.append(files)
     if zips and droiduser and droidhost:
         for zipfile in zips:
+            writeLog(logfile, 'Uploading: ' + zipfile)
             subprocess.call(['rsync', '-P', os.path.join(targetoutdir, zipfile), droiduser + '@' + droidhost + ':' + uploadpath ])
     else:
         writeLog(logfile, 'Skipping upload')
@@ -98,17 +98,17 @@ for target in args.target:
 # create html changelog
 if os.path.exists(changelogfile):
     cl = html.Create()
-    cl.addtitle('Changelog')
-    clbody = html.parseFile(changelogfile)
-    cl.addheader(clbody[0])
-    cl.addbody(clbody[1:])
+    cl.title('Changelog')
+    clbody = html.parse_file(changelogfile)
+    cl.header(clbody[0])
+    cl.body(clbody[1:])
     cl.write(htmlchangelogfile)
 # create html buildlog
 if os.path.exists(logfile):
     bl = html.Create()
-    bl.addtitle('Buildlog')
-    bl.addheader(DATE)
-    bl.addbody(html.parseFile(logfile))
+    bl.title('Buildlog')
+    bl.header(DATE)
+    bl.body(html.parse_file(logfile))
     bl.write(htmllogfile)
 # upload the html files
 if droiduser and droidhost:
