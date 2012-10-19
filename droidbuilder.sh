@@ -58,8 +58,9 @@ function print_help() {
 cat <<EOF
 Usage:
   `basename $0` -dhilmnqrsu -t <target>|"<target> <target>"
-                  -j <jobs> -p <path> -w <workingdir>
+                  -j <jobs> -p|a <path> -w <workingdir>
 Options:
+-a     append upload path ${UL_PATH}${UL_DIR}-<OPTARG>
 -d     dont upload
 -h     show this help
 -i     build kernel inline
@@ -67,7 +68,7 @@ Options:
 -l     linaro build (implies -u and -i)
 -m     also build miniskirt (for passion only)
 -n     build nightly
--p     directory(path) for upload (appended to ${UL_PATH}${UL_DIR}-)
+-p     set upload path ${UL_PATH}/<OPTARG>
 -q     route build output to /dev/null
 -r     release build (uploads to <codename>) (implies -z)
 -s     sync repo (also generates changelog)
@@ -202,12 +203,13 @@ if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":nsdhimlup:t:w:j:rqz" opt; do
+while getopts ":nsdhimlup:t:w:j:rqza:" opt; do
     case $opt in
+        p) UL_DIR=$OPTARG
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
-        p) UL_DIR=${UL_DIR}-$OPTARG;;
+        a) UL_DIR=${UL_DIR}-$OPTARG;;
         t) TARGETLIST=($OPTARG);;
         h) print_help; bail;;
         i) KERNEL=1;;
