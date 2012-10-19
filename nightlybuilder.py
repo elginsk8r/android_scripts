@@ -30,7 +30,7 @@ def write_log(message):
     with open(LOG_FILE, 'a') as f:
         f.write(message + '\n')
 
-def run_rsync(local_file, remote_path, log_file, message='Synced'):
+def run_rsync(local_file, remote_path, message='Synced'):
     try:
         with open(os.devnull, 'w') as shadup:
             subprocess.check_call(['rsync', '-P', local_file, remote_path], \
