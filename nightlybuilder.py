@@ -9,7 +9,7 @@ import subprocess
 from drewis import html
 
 
-VERSION = '0.3'
+VERSION = '0.4'
 NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
 DATE = datetime.datetime.now().strftime('%Y.%m.%d')
 
@@ -25,20 +25,20 @@ parser.add_argument('--nosync', help="Don't sync or create changelog, for testin
 args = parser.parse_args()
 
 # fuctions
-def write_log(logfile, message):
-    with open(logfile, 'a') as f:
+def write_log(log_file, message):
+    with open(log_file, 'a') as f:
         f.write(message + '\n')
 
-def run_rsync(local_file, mirror_path, logfile, message='Syncing'):
+def run_rsync(local_file, remote_path, log_file, message='Synced'):
     try:
         with open(os.devnull, 'w') as shadup:
-            subprocess.check_call(['rsync', '-P', local_file, mirror_path], \
+            subprocess.check_call(['rsync', '-P', local_file, remote_path], \
                         stdout=shadup, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        write_log(logfile, 'FAIL: rsync returned %d while %s: %s' \
-                    % (e.returncode, message, os.path.basename(local_file)))
+        write_log(log_file, 'FAIL: rsync returned %d for %s' \
+                    % (e.returncode, os.path.basename(local_file)))
     else:
-        write_log(logfile, '%s: %s' % (message, os.path.basename(local_file)))
+        write_log(log_file, '%s: %s' % (message, os.path.basename(local_file)))
 
 # cd working dir
 previous_working_dir = os.getcwd()
@@ -97,13 +97,13 @@ for target in args.target:
             if droiduser and droidhost:
                 run_rsync(os.path.join(targetoutdir, z), \
                             '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
-                            logfile, 'Uploading')
+                            logfile, 'Uploaded')
             else:
                 write_log(logfile, 'Skipping upload for %s' % z)
             if localmirror:
                 run_rsync(os.path.join(targetoutdir, z), \
                             os.path.join(localmirror, mirrorpath), \
-                            logfile, 'Mirroring')
+                            logfile, 'Mirrored')
             else:
                 write_log(logfile, 'Skipping mirror for %s' % z)
 
@@ -126,18 +126,18 @@ if os.path.exists(logfile):
 if droiduser and droidhost:
     if os.path.exists(htmllogfile):
         run_rsync(htmllogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath),
-                    logfile, 'Uploading')
+                    logfile, 'Uploaded')
     if os.path.exists(htmlchangelogfile):
         run_rsync(htmlchangelogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
-                    logfile, 'Uploading')
+                    logfile, 'Uploaded')
 # mirror the log files
 if localmirror:
     if os.path.exists(logfile):
         run_rsync(logfile, os.path.join(localmirror, mirrorpath), \
-                    logfile, 'Mirroring')
+                    logfile, 'Mirrored')
     if os.path.exists(changelogfile):
         run_rsync(changelogfile, os.path.join(localmirror, mirrorpath), \
-                    logfile, 'Mirroring')
+                    logfile, 'Mirrored')
 
 # run postupload script
 subprocess.call(['ssh', '%s@%s' % (droiduser,droidhost), 'test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
