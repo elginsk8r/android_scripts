@@ -17,7 +17,7 @@ DATE = datetime.datetime.now().strftime('%Y.%m.%d')
 parser = argparse.ArgumentParser(description="Drew's builder script")
 parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
 parser.add_argument('target', help="Device(s) to build",
-                    action='append')
+                    nargs='+')
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
 parser.add_argument('--nosync', help="Don't sync or create changelog, for testing",
