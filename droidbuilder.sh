@@ -24,9 +24,6 @@ DATE=$(date +%Y.%m.%d)
 UL_DIR=$DATE
 # upload path
 UL_PATH="~/uploads/"
-# location to upload when building from a cron job
-# format $UL_PATH/$UL_CRON_PATH/$UL_DIR
-UL_CRON_PATH="cron"
 # Assumes zip naming ${ZIPPREFIX}*${target}*.zip
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
 # where $target is element of $TARGETLIST
@@ -43,7 +40,6 @@ SYNC=0
 UPLOAD=1
 CLOBBER=0
 NIGHTLY=0
-CRONJOB=0
 KERNEL=0
 PMINI=0
 LBUILD=0
@@ -61,10 +57,9 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -cdhilmnqrsu -t <target>|"<target> <target>"
+  `basename $0` -dhilmnqrsu -t <target>|"<target> <target>"
                   -j <jobs> -p <path> -w <workingdir>
 Options:
--c     special case for cronjobs (implies -n)
 -d     dont upload
 -h     show this help
 -i     build kernel inline
@@ -139,38 +134,6 @@ function get_changelog() {
     repo start ${current} --all
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} >> $changelogfile
     logit "Created changelog ${changelog}"
-    test $CRONJOB -eq 1 && generate_html_changelog $changelogfile
-    test $MIRRORUPLOAD -eq 1 && test $CRONJOB -eq 1 && mirror_upload $changelogfile
-}
-
-# 1 arg: path to local changelog
-function generate_html_changelog () {
-    local readfile=$1
-    local htmlfile=$(mktemp -d)/changelog.html
-    cat <<EOF > $htmlfile
-<!DOCTYPE html>
-<html><body>
-<h2>$(basename $readfile)</h2>
-<p>$(cat $readfile | sed ':a;N;$!ba;s/\n/\<br\>/g')</p>
-</body></html>
-EOF
-    test $UPLOAD -eq 1 && push_upload $htmlfile $UL_PATH
-    rm -r $(dirname $htmlfile)
-}
-
-# 1 arg: path to local buildlog
-function generate_html_buildlog () {
-    local readfile=$1
-    local htmlfile=$(mktemp -d)/buildlog.html
-    cat <<EOF > $htmlfile
-<!DOCTYPE html>
-<html><body>
-<h2>$(basename $readfile)</h2>
-<p>$(cat $readfile | sed ':a;N;$!ba;s/\n/\<br\>/g')</p>
-</body></html>
-EOF
-    test $UPLOAD -eq 1 && push_upload $htmlfile $UL_PATH
-    rm -r $(dirname $htmlfile)
 }
 
 # 2 args: local path to file, remote path
@@ -239,7 +202,7 @@ if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":nsdhcimlup:t:w:j:rqz" opt; do
+while getopts ":nsdhimlup:t:w:j:rqz" opt; do
     case $opt in
         n) NIGHTLY=1;;
         s) SYNC=1;;
@@ -247,7 +210,6 @@ while getopts ":nsdhcimlup:t:w:j:rqz" opt; do
         p) UL_DIR=${UL_DIR}-$OPTARG;;
         t) TARGETLIST=($OPTARG);;
         h) print_help; bail;;
-        c) CRONJOB=1;NIGHTLY=1;;
         i) KERNEL=1;;
         j) KERNJOBS=$OPTARG;;
         m) PMINI=1;;
@@ -262,7 +224,6 @@ while getopts ":nsdhcimlup:t:w:j:rqz" opt; do
     esac
 done
 
-# TODO allow override on commandline
 if [ $UPLOAD -eq 1 ]; then
     [ -z "$DROID_USER" ] && bail "DROID_USER not set for upload server"
     [ -z "$DROID_HOST" ] && bail "DROID_HOST not set for upload server"
@@ -291,8 +252,6 @@ fi
 # Just in case
 [ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
 
-# Prepend extra path if needed
-[ $CRONJOB -eq 1 ] && UL_DIR="${UL_CRON_PATH}/${UL_DIR}"
 # Set full upload path now (execpt for releases which are appended later)
 [ $RELEASEBUILD -eq 0 ] && UL_PATH+="${UL_DIR}/"
 
@@ -323,7 +282,7 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
 
     [ $KERNEL -eq 1 ] && find_deps
 
-    test $CRONJOB -eq 0 && logit "Cleaning"
+    logit "Cleaning"
     make clobber >/dev/null 2>&1 || { log_fail clobber $target; continue; }
 
     # passion gets the extra package
@@ -380,12 +339,6 @@ calc_run_time $TIMESTART
 
 # copy build log
 test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE
-test $CRONJOB -eq 1 && generate_html_buildlog $REPORT_FILE
-
-# run postupload to recreate the index and include the new directory
-if [ $CRONJOB -eq 1 ]; then
-    ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} "test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh"
-fi
 
 [ -n "$WORKING_DIR" ] && popd
 exit
