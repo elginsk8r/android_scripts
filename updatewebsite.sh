@@ -1,4 +1,5 @@
 #!/bin/bash
+# Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 # update mirror
 #rsync -rtP -e 'ssh -p30000' evervolv@217.150.244.124:~/uploads/ /home/drew/uploads/mirror/

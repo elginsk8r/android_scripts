@@ -1,4 +1,5 @@
 #!/bin/bash
+# Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 write_log () {
     echo "$@" >> $EV_BUILDLOG
