@@ -78,6 +78,13 @@ localmirror = os.getenv('DROID_LOCAL_MIRROR')
 if args.nosync == False:
     subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
 
+# make the remote directories
+subprocess.call(['ssh', '%s@%s' % (droiduser, droidhost), \
+            'test -d %s || mkdir -p %s' % (uploadpath,uploadpath)])
+subprocess.call(['bash', '-c', 'test -d %s || mkdir -p %s' % \
+            (os.path.join(localmirror, mirrorpath), \
+             os.path.join(localmirror, mirrorpath))])
+
 # build each target
 for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
@@ -86,7 +93,6 @@ for target in args.target:
     # find, upload and mirror the zips
     # TODO: copy the files out and upload asyncronously while continuing to
     #       build other targets
-    subprocess.call(['ssh', droiduser + '@' + droidhost, 'test -d ' + uploadpath + ' || mkdir -p ' + uploadpath])
     zips = []
     targetoutdir = os.path.join('out', 'target', 'product', target)
     for f in os.listdir(targetoutdir):
