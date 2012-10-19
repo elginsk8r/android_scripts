@@ -1,4 +1,3 @@
-#/usr/bin/env python
 # Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 class Create(object):
@@ -35,6 +34,8 @@ class Create(object):
             for line in self.text:
                 f.write(line + '\n')
 
+
+# helpers
 def parse_file(input_file):
     '''takes name of file to read, returns list'''
     with open(input_file, 'r') as f:

@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 # Andrew Sutherland <dr3wsuth3rland@gmail.com>
-
 
 def Get():
     text ="""
