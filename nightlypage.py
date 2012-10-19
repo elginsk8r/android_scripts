@@ -15,7 +15,7 @@ staging = []
 for d in sorted(os.listdir(base_path)):
     if os.path.isdir(os.path.join(base_path,d)):
         z = [ f for f in sorted(os.listdir(os.path.join(base_path,d))) \
-                    if f.endswith('.zip') ]
+                    if f.endswith('.zip') or f.endswith('.html') ]
         staging.append((d,z))
 
 final = []
