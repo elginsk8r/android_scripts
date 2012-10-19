@@ -101,14 +101,14 @@ if os.path.exists(changelogfile):
     cl.title('Changelog')
     clbody = html.parse_file(changelogfile)
     cl.header(clbody[0])
-    cl.body(clbody[1:])
+    cl.body(add_line_breaks(clbody[1:]))
     cl.write(htmlchangelogfile)
 # create html buildlog
 if os.path.exists(logfile):
     bl = html.Create()
     bl.title('Buildlog')
     bl.header(DATE)
-    bl.body(html.parse_file(logfile))
+    bl.body(add_line_breaks(html.parse_file(logfile)))
     bl.write(htmllogfile)
 # upload the html files
 if droiduser and droidhost:
