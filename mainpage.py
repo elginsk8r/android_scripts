@@ -5,7 +5,7 @@ from drewis import html,analytics
 
 page_title = 'Evervolv Downloads'
 
-body = [ '<a href="n">Nightly Builds</a>', '<a href="r">Release Builds</a>' ]
+body = [ '<a href="nightlies.html">Nightly Builds</a>', '<a href="releases.html">Release Builds</a>' ]
 
 n = html.Create()
 n.title(page_title)
