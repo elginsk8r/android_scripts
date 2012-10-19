@@ -124,7 +124,7 @@ if localmirror:
         subprocess.call(['rsync', '-P', changelogfile, os.path.join(localmirror, mirrorpath)])
 
 # run postupload script
-subprocess.call(['ssh', droiduser + '@' + droidhost, 'test -e ~/postupload.py && python ~/postupload.py ~/uploads/cron'])
+subprocess.call(['ssh', '%s@%s' % (droiduser,droidhost), 'test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
 
 # cd previous working dir
 os.chdir(previous_working_dir)

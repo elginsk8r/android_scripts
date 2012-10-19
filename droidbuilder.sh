@@ -384,7 +384,7 @@ test $CRONJOB -eq 1 && generate_html_buildlog $REPORT_FILE
 
 # run postupload to recreate the index and include the new directory
 if [ $CRONJOB -eq 1 ]; then
-    ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} "test -e ~/postupload.py && python ~/postupload.py ~/uploads/cron"
+    ssh -p${DROID_HOST_PORT} ${DROID_USER}@${DROID_HOST} "test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh"
 fi
 
 [ -n "$WORKING_DIR" ] && popd
