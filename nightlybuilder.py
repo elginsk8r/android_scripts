@@ -82,9 +82,8 @@ if args.nosync == False:
 # make the remote directories
 subprocess.call(['ssh', '%s@%s' % (droiduser, droidhost), \
             'test -d %s || mkdir -p %s' % (uploadpath,uploadpath)])
-subprocess.call(['bash', '-c', 'test -d %s || mkdir -p %s' % \
-            (os.path.join(localmirror, mirrorpath), \
-             os.path.join(localmirror, mirrorpath))])
+if os.path.isdir(os.path.join(localmirror, mirrorpath)) == False:
+    os.makedirs(os.path.join(localmirror, mirrorpath))
 
 # build each target
 for target in args.target:
