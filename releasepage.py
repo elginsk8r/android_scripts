@@ -20,6 +20,8 @@ def get_device_name(name):
         return 'HTC Droid Incredible 2'
     elif name == 'Eligo':
         return 'HTC Droid Eris'
+    elif name == 'Gapps':
+        return 'Google Apps'
     elif name == 'Iaceo':
         return 'HTC Amaze 4G'
     elif name == 'Mirus':
@@ -50,6 +52,8 @@ def is_device(name):
         return True
     elif name == 'Eligo':
         return True
+    elif name == 'Gapps':
+        return True
     elif name == 'Iaceo':
         return True
     elif name == 'Mirus':
@@ -69,6 +73,9 @@ def is_device(name):
 
 script, base_path = argv
 base_url = 'http://ev-dl1.deuweri.com'
+warning_message = ['<p>This list may be incomplete.</p>', '<p>If you dont see what you want try browsing <a href="http://ev-dl1.deuweri.com/">ev-dl1.deuweri.com</a></p>']
+page_title('Evervolv Releases')
+#base_url = 'r'
 
 staging = []
 for d in sorted(os.listdir(base_path)):
@@ -86,9 +93,9 @@ for i in staging:
 
 sorted(final)
 r = html.Create()
-r.title('Evervolv Releases')
+r.title(page_title)
 r.analytics(analytics.Get())
-r.header('Evervolv Releases')
-r.body(['<p>This list may be incomplete. If you dont see what you want try browsing <a href="http://ev-dl1.deuweri.com/">ev-dl1.deuweri.com</a></p>'])
+r.header(page_title)
+r.body(warning_message)
 r.body(html.tup_to_ul(final))
 r.write('releases.html')
