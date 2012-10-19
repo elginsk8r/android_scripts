@@ -12,6 +12,7 @@ from drewis import html
 VERSION = '0.4'
 NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
 DATE = datetime.datetime.now().strftime('%Y.%m.%d')
+LOG_FILE = '' # This is assigned later, just letting you know
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -25,8 +26,8 @@ parser.add_argument('--nosync', help="Don't sync or create changelog, for testin
 args = parser.parse_args()
 
 # fuctions
-def write_log(log_file, message):
-    with open(log_file, 'a') as f:
+def write_log(message):
+    with open(LOG_FILE, 'a') as f:
         f.write(message + '\n')
 
 def run_rsync(local_file, remote_path, log_file, message='Synced'):
@@ -35,10 +36,10 @@ def run_rsync(local_file, remote_path, log_file, message='Synced'):
             subprocess.check_call(['rsync', '-P', local_file, remote_path], \
                         stdout=shadup, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        write_log(log_file, 'FAIL: rsync returned %d for %s' \
+        write_log('FAIL: rsync returned %d for %s' \
                     % (e.returncode, os.path.basename(local_file)))
     else:
-        write_log(log_file, '%s: %s' % (message, os.path.basename(local_file)))
+        write_log('%s: %s' % (message, os.path.basename(local_file)))
 
 # cd working dir
 previous_working_dir = os.getcwd()
@@ -51,9 +52,9 @@ os.putenv('NIGHTLY_BUILD', 'true')
 buildlogdir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_buildlogs')
 if os.path.isdir(buildlogdir) == False:
     os.mkdir(buildlogdir)
-logfile = os.path.join(buildlogdir, 'buildlog-' + DATE + '.log')
+LOG_FILE = os.path.join(buildlogdir, 'buildlog-' + DATE + '.log')
 htmllogfile = os.path.join(buildlogdir, 'buildlog-' + DATE + '.html')
-os.putenv('EV_BUILDLOG', logfile)
+os.putenv('EV_BUILDLOG', LOG_FILE)
 
 # changelog
 changelogdir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_changelogs')
@@ -103,15 +104,15 @@ for target in args.target:
             if droiduser and droidhost:
                 run_rsync(os.path.join(targetoutdir, z), \
                             '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
-                            logfile, 'Uploaded')
+                            'Uploaded')
             else:
-                write_log(logfile, 'Skipping upload for %s' % z)
+                write_log('Skipping upload for %s' % z)
             if localmirror:
                 run_rsync(os.path.join(targetoutdir, z), \
                             os.path.join(localmirror, mirrorpath), \
-                            logfile, 'Mirrored')
+                            'Mirrored')
             else:
-                write_log(logfile, 'Skipping mirror for %s' % z)
+                write_log('Skipping mirror for %s' % z)
 
 # create html changelog
 if os.path.exists(changelogfile):
@@ -122,28 +123,28 @@ if os.path.exists(changelogfile):
     cl.body(html.add_line_breaks(clbody[1:]))
     cl.write(htmlchangelogfile)
 # create html buildlog
-if os.path.exists(logfile):
+if os.path.exists(LOG_FILE):
     bl = html.Create()
     bl.title('Buildlog')
     bl.header(DATE)
-    bl.body(html.add_line_breaks(html.parse_file(logfile)))
+    bl.body(html.add_line_breaks(html.parse_file(LOG_FILE)))
     bl.write(htmllogfile)
 # upload the html files
 if droiduser and droidhost:
     if os.path.exists(htmllogfile):
         run_rsync(htmllogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath),
-                    logfile, 'Uploaded')
+                    'Uploaded')
     if os.path.exists(htmlchangelogfile):
         run_rsync(htmlchangelogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
-                    logfile, 'Uploaded')
+                    'Uploaded')
 # mirror the log files
 if localmirror:
-    if os.path.exists(logfile):
-        run_rsync(logfile, os.path.join(localmirror, mirrorpath), \
-                    logfile, 'Mirrored')
+    if os.path.exists(LOG_FILE):
+        run_rsync(LOG_FILE, os.path.join(localmirror, mirrorpath), \
+                    'Mirrored')
     if os.path.exists(changelogfile):
         run_rsync(changelogfile, os.path.join(localmirror, mirrorpath), \
-                    logfile, 'Mirrored')
+                    'Mirrored')
 
 # run postupload script
 subprocess.call(['ssh', '%s@%s' % (droiduser,droidhost), 'test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
