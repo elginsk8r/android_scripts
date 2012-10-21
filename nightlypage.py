@@ -21,7 +21,7 @@ for d in sorted(os.listdir(base_path)):
 final = []
 for i in staging:
     if i[1]:
-        final.append((i[0], [ j for j in html.list_to_links_with_analytics(i[1], \
+        final.append((i[0], [ j for j in html.make_links(i[1], \
                     '%s/%s' % (base_url, i[0]), 'NightlyClick') ]))
 
 final.reverse() # newest first

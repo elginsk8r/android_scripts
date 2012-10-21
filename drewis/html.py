@@ -66,9 +66,14 @@ def tup_to_ul(i):
     l.append('</ul>')
     return l
 
-def list_to_links_with_analytics(i, p, action='Click'):
+def make_links(i, p, action='Click'):
     '''takes list, link prefix and optional action to report to analytics'''
-    l = []
-    for item in i:
-        l.append('<a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \'%s\', \'%s\']);">%s</a>' % (p,item,action,item,item))
-    return l
+    return [ '<a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \'%s\', \
+        \'%s\']);">%s</a>' % (p,j,action,j,j) for j in i ]
+
+def make_links_with_mirror(i,p,m,action='Click'):
+    '''takes list, link prefix, mirror prefix, and optional action for analytics'''
+    return [ '<a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \'%s\', \
+        \'%s\']);">%s</a> <a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \
+        \'%s\', \'%s\']);">(mirror)</a>' % \
+        (p,j,action,j,j,m,j,action,j) for j in i ]
