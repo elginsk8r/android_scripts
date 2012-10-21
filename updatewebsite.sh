@@ -6,7 +6,7 @@ release_dir=mirror
 nightly_dir=cron
 
 # update release mirror
-rsync -qrpt --partial --delete -e 'ssh -p30000' evervolv@217.150.244.124:~/uploads/ $base_dir/$release_dir/
+rsync -qrpt --partial -e 'ssh -p30000' evervolv@217.150.244.124:~/uploads/ $base_dir/$release_dir/
 
 # update webpages
 WD=$(dirname $0)
