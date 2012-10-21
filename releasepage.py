@@ -29,7 +29,6 @@ for i in staging:
                 html.list_to_links_with_analytics(i[1], '%s/%s' % (base_url, i[0]), \
                 'ReleaseClick') ]))
 
-sorted(final)
 r = html.Create()
 r.title(page_title)
 r.analytics(analytics.Get())
