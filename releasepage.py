@@ -13,7 +13,7 @@ script, base_path = argv
 base_url = 'http://ev-dl1.deuweri.com'
 warning_message = ['<p>This list may be incomplete.</p>', '<p>If you dont see what you want try browsing <a href="http://ev-dl1.deuweri.com/">ev-dl1.deuweri.com</a></p>']
 page_title = 'Evervolv Releases'
-#base_url = 'r'
+mirror_base_url = 'r'
 
 staging = []
 for d in sorted(os.listdir(base_path)):
@@ -26,7 +26,8 @@ final = []
 for i in staging:
     if i[1] and devices.is_device(i[0]):
         final.append(('%s %s:' % (i[0],devices.get_device_name(i[0])), [ j for j in \
-                html.make_links(i[1], '%s/%s' % (base_url, i[0]), \
+                html.make_links_with_mirror(i[1], '%s/%s' % (base_url, i[0]), \
+                '%s/%s' % (mirror_base_url, i[0]),
                 'ReleaseClick') ]))
 
 r = html.Create()
