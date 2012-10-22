@@ -4,7 +4,11 @@
 import argparse
 import datetime
 import os
+import shutil
 import subprocess
+import tempfile
+import threading
+import Queue
 
 from drewis import html
 
@@ -42,6 +46,20 @@ def run_rsync(local_file, remote_path, message='Synced'):
                     % (e.returncode, os.path.basename(local_file)))
     else:
         write_log('%s: %s' % (message, os.path.basename(local_file)))
+
+class rsyncThread(threading.Thread):
+    '''Threaded rsync task'''
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        while True:
+            f_local = self.queue.get()
+            run_rsync(f_local, \
+                    '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
+                    'Uploaded')
+            self.queue.task_done()
 
 # cd working dir
 previous_working_dir = os.getcwd()
@@ -89,14 +107,18 @@ if localmirror:
     if os.path.isdir(os.path.join(localmirror, mirrorpath)) == False:
         os.makedirs(os.path.join(localmirror, mirrorpath))
 
+# rsync thread queue
+queue = Queue.Queue()
+t = rsyncThread(queue)
+t.setDaemon(True)
+t.start()
+temp_dir = tempfile.mkdtemp()
 # build each target
 for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
     # Run the build: target will be pulled from env
     subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], shell=True)
     # find, upload and mirror the zips
-    # TODO: copy the files out and upload asyncronously while continuing to
-    #       build other targets
     zips = []
     targetoutdir = os.path.join('out', 'target', 'product', target)
     for f in os.listdir(targetoutdir):
@@ -104,19 +126,23 @@ for target in args.target:
             zips.append(f)
     if zips:
         for z in zips:
-            if droiduser and droidhost:
-                run_rsync(os.path.join(targetoutdir, z), \
-                            '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
-                            'Uploaded')
-            else:
-                write_log('Skipping upload for %s' % z)
-            if localmirror:
-                run_rsync(os.path.join(targetoutdir, z), \
-                            os.path.join(localmirror, mirrorpath), \
-                            'Mirrored')
-            else:
-                write_log('Skipping mirror for %s' % z)
+            shutil.copy(os.path.join(targetoutdir, z),os.path.join(temp_dir, z))
+            queue.put(os.path.join(temp_dir, z))
+#            if droiduser and droidhost:
+#                run_rsync(os.path.join(targetoutdir, z), \
+#                            '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
+#                            'Uploaded')
+#            else:
+#                write_log('Skipping upload for %s' % z)
+#            if localmirror:
+#                run_rsync(os.path.join(targetoutdir, z), \
+#                            os.path.join(localmirror, mirrorpath), \
+#                            'Mirrored')
+#            else:
+#                write_log('Skipping mirror for %s' % z)
 
+queue.join() # wait for uploads to complete
+os.removedirs(temp_dir)
 write_log('Total Build Time: %s' % (datetime.datetime.now() - TSTART))
 
 # create html changelog
