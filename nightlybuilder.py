@@ -7,7 +7,6 @@ import os
 import shutil
 import subprocess
 import tempfile
-import threading
 import Queue
 
 from drewis import html,rsync
@@ -21,8 +20,10 @@ parser.add_argument('target', help="Device(s) to build",
                     nargs='+')
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
-parser.add_argument('--nosync', help="Don't sync or create changelog, for testing",
-                    action="store_true")
+parser.add_argument('--nosync', help="Don't sync or make changelog: for testing only",
+                    action="store_false")
+parser.add_argument('--nobuild', help="Don't build: for testing only",
+                    action="store_false")
 args = parser.parse_args()
 
 # static vars
@@ -69,7 +70,7 @@ droidhost = os.getenv('DROID_HOST')
 localmirror = os.getenv('DROID_LOCAL_MIRROR')
 
 # sync the tree
-if args.nosync == False:
+if args.nosync:
     subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
 
 # make the remote directories
@@ -82,11 +83,11 @@ if localmirror:
 
 # upload thread
 up_q = Queue.Queue()
-t = rsync.rsyncThread(up_q, \
+t1 = rsync.rsyncThread(up_q, \
                 '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
                 message='Uploaded')
-t.setDaemon(True)
-t.start()
+t1.setDaemon(True)
+t1.start()
 
 # mirror thread
 m_q = Queue.Queue()
@@ -106,7 +107,8 @@ build_start = datetime.datetime.now()
 for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
     # Run the build: target will be pulled from env
-    subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], shell=True)
+    if args.nobuild:
+        subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], shell=True)
     # find and add the zips to the rsync queues
     zips = []
     target_out_dir = os.path.join('out', 'target', 'product', target)
@@ -132,9 +134,11 @@ write_log('Total build time: %s' % (datetime.datetime.now() - build_start))
 # wait for rsync to complete
 m_q.join()
 up_q.join()
+
 # cleanup
 shutil.rmtree(temp_dir)
 
+# log total time
 write_log('Total time with sync: %s' % (datetime.datetime.now() - build_start))
 
 # create html changelog
