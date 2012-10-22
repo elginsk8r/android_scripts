@@ -82,10 +82,12 @@ if args.nosync == False:
     subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
 
 # make the remote directories
-subprocess.call(['ssh', '%s@%s' % (droiduser, droidhost), \
-            'test -d %s || mkdir -p %s' % (uploadpath,uploadpath)])
-if os.path.isdir(os.path.join(localmirror, mirrorpath)) == False:
-    os.makedirs(os.path.join(localmirror, mirrorpath))
+if droiduser and droidhost:
+    subprocess.call(['ssh', '%s@%s' % (droiduser, droidhost), \
+                'test -d %s || mkdir -p %s' % (uploadpath,uploadpath)])
+if localmirror:
+    if os.path.isdir(os.path.join(localmirror, mirrorpath)) == False:
+        os.makedirs(os.path.join(localmirror, mirrorpath))
 
 # build each target
 for target in args.target:
@@ -115,7 +117,7 @@ for target in args.target:
             else:
                 write_log('Skipping mirror for %s' % z)
 
-write_log('Total Build Time: ' + datetime.datetime.now() - TSTART)
+write_log('Total Build Time: %s' % (datetime.datetime.now() - TSTART))
 
 # create html changelog
 if os.path.exists(changelogfile):
