@@ -11,7 +11,9 @@ from drewis import html
 
 VERSION = '0.4'
 NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
-DATE = datetime.datetime.now().strftime('%Y.%m.%d')
+TSTART = datetime.datetime.now()
+DATE = TSTART.strftime('%Y.%m.%d')
+
 LOG_FILE = '' # This is assigned later, just letting you know
 
 # handle commandline args
@@ -112,6 +114,8 @@ for target in args.target:
                             'Mirrored')
             else:
                 write_log('Skipping mirror for %s' % z)
+
+write_log('Total Build Time: ' + datetime.datetime.now() - TSTART)
 
 # create html changelog
 if os.path.exists(changelogfile):
