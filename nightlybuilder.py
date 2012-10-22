@@ -10,9 +10,9 @@ import tempfile
 import threading
 import Queue
 
-from drewis import html
+from drewis import html,rsync
 
-VERSION = '0.5'
+VERSION = '0.6'
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -33,31 +33,6 @@ DATE = datetime.datetime.now().strftime('%Y.%m.%d')
 def write_log(message):
     with open(LOG_FILE, 'a') as f:
         f.write(message + '\n')
-
-def run_rsync(local_file, remote_path, message='Synced'):
-    try:
-        with open(os.devnull, 'w') as shadup:
-            subprocess.check_call(['rsync', '-P', local_file, remote_path], \
-                        stdout=shadup, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        write_log('FAIL: rsync returned %d for %s' \
-                    % (e.returncode, os.path.basename(local_file)))
-    else:
-        write_log('%s: %s' % (message, os.path.basename(local_file)))
-
-class rsyncThread(threading.Thread):
-    '''Threaded rsync task'''
-    def __init__(self, queue, p_remote, message='Synced'):
-        threading.Thread.__init__(self)
-        self.queue = queue
-        self.p_remote = p_remote
-        self.message = message
-
-    def run(self):
-        while True:
-            f_local = self.queue.get()
-            run_rsync(f_local, self.p_remote, self.message)
-            self.queue.task_done()
 
 # cd working dir
 previous_working_dir = os.getcwd()
@@ -107,7 +82,7 @@ if localmirror:
 
 # upload thread
 up_q = Queue.Queue()
-t = rsyncThread(up_q, \
+t = rsync.rsyncThread(up_q, \
                 '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
                 message='Uploaded')
 t.setDaemon(True)
@@ -115,7 +90,7 @@ t.start()
 
 # mirror thread
 m_q = Queue.Queue()
-t2 = rsyncThread(m_q, \
+t2 = rsync.rsyncThread(m_q, \
                  os.path.join(localmirror, mirrorpath), \
                  message='Mirrored')
 t2.setDaemon(True)
@@ -135,9 +110,10 @@ for target in args.target:
     # find and add the zips to the rsync queues
     zips = []
     target_out_dir = os.path.join('out', 'target', 'product', target)
-    for f in os.listdir(target_out_dir):
-        if f.startswith('Evervolv') and f.endswith('.zip'):
-            zips.append(f)
+    if os.path.isdir(target_out_dir):
+        for f in os.listdir(target_out_dir):
+            if f.startswith('Evervolv') and f.endswith('.zip'):
+                zips.append(f)
     if zips:
         for z in zips:
             shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
@@ -159,6 +135,8 @@ up_q.join()
 # cleanup
 shutil.rmtree(temp_dir)
 
+write_log('Total time with sync: %s' % (datetime.datetime.now() - build_start))
+
 # create html changelog
 if os.path.exists(changelogfile):
     cl = html.Create()
@@ -179,19 +157,19 @@ if os.path.exists(LOG_FILE):
 # upload the html files
 if droiduser and droidhost:
     if os.path.exists(htmllogfile):
-        run_rsync(htmllogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath),
+        rsync.rsync(htmllogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath),
                     'Uploaded')
     if os.path.exists(htmlchangelogfile):
-        run_rsync(htmlchangelogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
+        rsync.rsync(htmlchangelogfile, '%s@%s:%s' % (droiduser, droidhost, uploadpath), \
                     'Uploaded')
 
 # mirror the log files
 if localmirror:
     if os.path.exists(LOG_FILE):
-        run_rsync(LOG_FILE, os.path.join(localmirror, mirrorpath), \
+        rsync.rsync(LOG_FILE, os.path.join(localmirror, mirrorpath), \
                     'Mirrored')
     if os.path.exists(changelogfile):
-        run_rsync(changelogfile, os.path.join(localmirror, mirrorpath), \
+        rsync.rsync(changelogfile, os.path.join(localmirror, mirrorpath), \
                     'Mirrored')
 
 # run postupload script
