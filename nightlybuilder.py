@@ -12,13 +12,7 @@ import Queue
 
 from drewis import html
 
-
-VERSION = '0.4'
-NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
-TSTART = datetime.datetime.now()
-DATE = TSTART.strftime('%Y.%m.%d')
-
-LOG_FILE = '' # This is assigned later, just letting you know
+VERSION = '0.5'
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -30,6 +24,10 @@ parser.add_argument('--source', help="Path to android tree",
 parser.add_argument('--nosync', help="Don't sync or create changelog, for testing",
                     action="store_true")
 args = parser.parse_args()
+
+# static vars
+NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
+DATE = datetime.datetime.now().strftime('%Y.%m.%d')
 
 # fuctions
 def write_log(message):
@@ -126,6 +124,9 @@ t2.start()
 # for zip storage
 temp_dir = tempfile.mkdtemp()
 
+# keep track
+build_start = datetime.datetime.now()
+
 # build each target
 for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
@@ -150,7 +151,7 @@ for target in args.target:
                 write_log('Skipping mirror for %s' % z)
 
 # log our buildtime
-write_log('Total build time: %s' % (datetime.datetime.now() - TSTART))
+write_log('Total build time: %s' % (datetime.datetime.now() - build_start))
 
 # wait for rsync to complete
 m_q.join()
