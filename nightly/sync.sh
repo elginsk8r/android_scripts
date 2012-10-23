@@ -18,7 +18,7 @@ get_changelog () {
     repo sync -fd -j12 >/dev/null 2>&1 || echo "Sync failed" >> $changelogfile
     repo start ${current} --all >/dev/null 2>&1
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} >> $changelogfile 2>/dev/null
-    write_log "Created changelog $changelog"
+    write_log "INFO:Created changelog $changelog"
     return 0
 }
 
