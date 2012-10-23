@@ -4,12 +4,26 @@ class Create(object):
     '''Creates a basic html file'''
 
     def __init__(self):
-        self.text = ['<!DOCTYPE html>','<html>','<head>','<title>','</title>','</head>','<body>','<h3>','</h3>','</body>','</html>']
+        self.text = ['<!DOCTYPE html>',\
+                    '<html>',\
+                    '<head>',\
+                    '<title>','</title>',\
+                    '<style type="text/css">','</style>',\
+                    '</head>',\
+                    '<body>',\
+                    '<h3>','</h3>',\
+                    '</body>',\
+                    '</html>']
 
     def title(self, title):
         '''takes string'''
         i = self.text.index('</title>')
         self.text.insert(i, title)
+
+    def css(self, css):
+        '''takes string'''
+        i = self.text.index('</style>')
+        self.text.insert(i, css)
 
     def analytics(self, script):
         '''takes string'''
