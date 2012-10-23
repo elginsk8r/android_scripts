@@ -14,6 +14,15 @@ base_url = 'http://ev-dl1.deuweri.com'
 warning_message = ['<p>This list may be incomplete.</p>', '<p>If you dont see what you want try browsing <a href="http://ev-dl1.deuweri.com/">ev-dl1.deuweri.com</a></p>']
 page_title = 'Evervolv Releases'
 mirror_base_url = 'r'
+css = '''
+body {
+    background-color:#0099CC;
+    font-family:"Lucida Console", Monaco, monospace;
+    color:#FFFFFF;
+}
+a:link {color:#FFFFFF;}
+a:visited {color:#FFFFFF;}
+'''
 
 staging = []
 for d in sorted(os.listdir(base_path)):
@@ -32,6 +41,7 @@ for i in staging:
 
 r = html.Create()
 r.title(page_title)
+r.css(css)
 r.analytics(analytics.Get())
 r.header(page_title)
 r.body(warning_message)

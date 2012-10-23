@@ -10,6 +10,15 @@ from drewis import html,analytics
 script, base_path = argv
 base_url = 'n'
 page_title = 'Evervolv Nightlies'
+css = '''
+body {
+    background-color:#0099CC;
+    font-family:"Lucida Console", Monaco, monospace;
+    color:#FFFFFF;
+}
+a:link {color:#FFFFFF;}
+a:visited {color:#FFFFFF;}
+'''
 
 staging = []
 for d in sorted(os.listdir(base_path)):
@@ -28,6 +37,7 @@ final.reverse() # newest first
 
 n = html.Create()
 n.title(page_title)
+n.css(css)
 n.analytics(analytics.Get())
 n.header(page_title)
 n.body(html.tup_to_ul(final))

@@ -5,11 +5,22 @@ from drewis import html,analytics
 
 page_title = 'Evervolv Downloads'
 
-body = [ '<a href="nightlies.html">Nightly Builds</a>', '<a href="releases.html">Release Builds</a>' ]
+body = [ '<a href="nightlies.html">Nightly Builds</a>',\
+         '<a href="releases.html">Release Builds</a>' ]
+css = '''
+body {
+    background-color:#0099CC;
+    font-family:"Lucida Console", Monaco, monospace;
+    color:#FFFFFF;
+}
+a:link {color:#FFFFFF;}
+a:visited {color:#FFFFFF;}
+'''
 
-n = html.Create()
-n.title(page_title)
-n.analytics(analytics.Get())
-n.header(page_title)
-n.body(html.list_to_ul(body))
-n.write('index.html')
+m = html.Create()
+m.title(page_title)
+m.css(css)
+m.analytics(analytics.Get())
+m.header(page_title)
+m.body(html.list_to_ul(body))
+m.write('index.html')
