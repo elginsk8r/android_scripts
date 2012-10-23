@@ -10,7 +10,8 @@ import subprocess
 import tempfile
 import Queue
 
-from drewis import html,rsync
+# local
+from drewis import html, rsync, pretty
 
 VERSION = '0.7'
 
@@ -154,7 +155,7 @@ for target in args.target:
 
 # write total buildtime
 with open(buildlog, 'a') as f:
-    f.write('Built all targets in: %s\n' % (datetime.datetime.now() - build_start))
+    f.write('Built all targets in: %s\n' % (pretty.time(datetime.datetime.now() - build_start)))
 
 # wait for builds to finish uploading/mirroring
 m_q.join()
@@ -163,7 +164,7 @@ upq.join()
 # cleanup
 shutil.rmtree(temp_dir)
 
-logging.info('Total run time: %s' % (datetime.datetime.now() - SCRIPT_START))
+logging.info('Total run time: %s' % (pretty.time(datetime.datetime.now() - SCRIPT_START)))
 
 #
 # Finish up
