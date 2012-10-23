@@ -38,7 +38,7 @@ droid_user = os.getenv('DROID_USER')
 droid_host = os.getenv('DROID_HOST')
 local_mirror = os.getenv('DROID_LOCAL_MIRROR')
 
-if not droid_host and not droid_user and not local_mirror:
+if not droid_host or not droid_user or not local_mirror:
     print 'DROID_HOST or DROID_USER or DROID_LOCAL_MIRROR not set... Bailing'
     exit()
 
