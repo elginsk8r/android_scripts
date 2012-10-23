@@ -109,7 +109,7 @@ if args.nosync:
         upq.put(html_changelog)
         m_q.put(changelog)
 else:
-    logging.info('Skipping sync')
+    logging.info('Skipped sync')
 
 #
 # Building
@@ -149,6 +149,8 @@ for target in args.target:
             shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
             upq.put(os.path.join(temp_dir, z))
             m_q.put(os.path.join(temp_dir, z))
+    else:
+        logging.warning('No zips found for %s' % target)
 
 # write total buildtime
 with open(buildlog, 'a') as f:
