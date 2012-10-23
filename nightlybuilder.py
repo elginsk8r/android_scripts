@@ -61,8 +61,12 @@ logging.basicConfig(filename=scriptlog, level=logging.INFO,
             format='%(levelname)s:%(message)s')
 
 # make the remote directories
-subprocess.call(['ssh', '%s@%s' % (droid_user, droid_host), \
-                 'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
+try:
+    subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host), \
+            'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
+except subprocess.CalledProcessError as e:
+    logging.error('ssh returned %d while making directories' % (e.returncode))
+
 if os.path.isdir(mirror_path) == False:
     os.makedirs(mirror_path)
 
@@ -96,7 +100,11 @@ if args.nosync:
     # export for sync
     os.putenv('EV_CHANGELOG', changelog)
     # sync the tree
-    subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], shell=True)
+    try:
+        subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], \
+                shell=True)
+    except subprocess.CalledProcessError as e:
+        logging.error('sync returned %d' % (e.returncode))
     # create the html changelog
     if os.path.exists(changelog):
         html_changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.html')
@@ -137,7 +145,11 @@ for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
     # Run the build: target will be pulled from env
     if args.nobuild:
-        subprocess.call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], shell=True)
+        try:
+            subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], \
+                    shell=True)
+        except subprocess.CalledProcessError as e:
+            logging.error('Building returned %d for %s' % (e.returncode, target))
     # find and add the zips to the rsync queues
     zips = []
     target_out_dir = os.path.join('out', 'target', 'product', target)
@@ -198,7 +210,10 @@ if os.path.exists(scriptlog):
     upq.join()
 
 # run postupload script
-subprocess.call(['ssh', '%s@%s' % (droid_user,droid_host), 'test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
+try:
+    subprocess.check_call(['ssh', '%s@%s' % (droid_user,droid_host), 'test -e ~/android_scripts/updatewebsite.sh && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
+except subprocess.CalledProcessError as e:
+    logging.error('ssh returned %d while updating website' % (e.returncode))
 
 # cd previous working dir
 os.chdir(previous_working_dir)
