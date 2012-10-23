@@ -49,8 +49,8 @@ os.chdir(args.source)
 # upload path
 upload_path = os.path.join('~', 'uploads', 'cron', DATE)
 
-# mirror path (append to local_mirror)
-mirror_path = os.path.join('cron', DATE)
+# mirror path
+mirror_path = os.path.join(local_mirror, 'cron', DATE)
 
 # script logging
 log_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_logs')
@@ -63,8 +63,8 @@ logging.basicConfig(filename=scriptlog, level=logging.INFO,
 # make the remote directories
 subprocess.call(['ssh', '%s@%s' % (droid_user, droid_host), \
                  'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
-if os.path.isdir(os.path.join(local_mirror, mirror_path)) == False:
-    os.makedirs(os.path.join(local_mirror, mirror_path))
+if os.path.isdir(mirror_path) == False:
+    os.makedirs(mirror_path)
 
 # upload thread
 upq = Queue.Queue()
@@ -77,7 +77,7 @@ t1.start()
 # mirror thread
 m_q = Queue.Queue()
 t2 = rsync.rsyncThread(m_q, \
-        os.path.join(local_mirror, mirror_path), \
+        mirror_path, \
         message='Mirrored')
 t2.setDaemon(True)
 t2.start()
