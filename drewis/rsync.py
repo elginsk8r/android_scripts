@@ -1,6 +1,7 @@
 # Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 import datetime
+import logging
 import os
 import subprocess
 import threading
@@ -25,11 +26,11 @@ def rsync(local_file, remote_path, message='Synced'):
             start = datetime.datetime.now()
             subprocess.check_call(['rsync', '-P', local_file, remote_path], \
                         stdout=shadup, stderr=subprocess.STDOUT)
-            print local_file, datetime.datetime.now() - start
+            finish = datetime.datetime.now()
     except subprocess.CalledProcessError as e:
-        pass
-#        write_log('FAIL: rsync returned %d for %s' \
-#                    % (e.returncode, os.path.basename(local_file)))
+        logging.error('rsync returned %d for %s' \
+                    % (e.returncode, os.path.basename(local_file)))
     else:
-        pass
-#        write_log('%s: %s' % (message, os.path.basename(local_file)))
+        logging.info("%s %s in %s" % (message, \
+                    os.path.basename(local_file), \
+                    finish - start))
