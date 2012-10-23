@@ -155,7 +155,7 @@ for target in args.target:
 
 # write total buildtime
 with open(buildlog, 'a') as f:
-    f.write('Built all targets in: %s\n' % (pretty.time(datetime.datetime.now() - build_start)))
+    f.write('INFO:Built all targets in %s\n' % (pretty.time(datetime.datetime.now() - build_start)))
 
 # wait for builds to finish uploading/mirroring
 m_q.join()
