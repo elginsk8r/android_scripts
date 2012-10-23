@@ -26,7 +26,7 @@ run_build () {
     breakfast $target >/dev/null 2>&1 || fatal_error "breakfast failed"
     make clobber >/dev/null 2>&1 || fatal_error "clobbering failed"
     make -j $threads $args >/dev/null 2>&1 || fatal_error "building failed"
-    get_build_time $buildstart "Built $target in:"
+    get_build_time $buildstart "INFO:Built $target in"
 }
 
 run_build $EV_NIGHTLY_TARGET
