@@ -22,10 +22,10 @@ run_build () {
     local target=$1 args="otapackage" buildstart=$(date +%s)
     local threads=$(($(cat /proc/meminfo | head -n1 | awk '{print $2}')/1000000))
     test "$target" = "passion" && args+=" systemupdatepackage"
-    source build/envsetup.sh >/dev/null 2>&1 || fatal_error "setenv failed"
-    breakfast $target >/dev/null 2>&1 || fatal_error "breakfast failed"
-    make clobber >/dev/null 2>&1 || fatal_error "clobbering failed"
-    make -j $threads $args >/dev/null 2>&1 || fatal_error "building failed"
+    source build/envsetup.sh >/dev/null 2>&1 || fatal_error "setenv failed for $target"
+    breakfast $target >/dev/null 2>&1 || fatal_error "breakfast failed for $target"
+    make clobber >/dev/null 2>&1 || fatal_error "clobbering failed for $target"
+    make -j $threads $args >/dev/null 2>&1 || fatal_error "Build failed for $target"
     get_build_time $buildstart "INFO:Built $target in"
 }
 
