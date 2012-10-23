@@ -27,6 +27,7 @@ run_build () {
     make clobber >/dev/null 2>&1 || fatal_error "ERROR:clobbering failed for $target"
     make -j $threads $args >/dev/null 2>&1 || fatal_error "ERROR:build failed for $target"
     get_build_time $buildstart "INFO:Built $target in"
+    return 0
 }
 
 run_build $EV_NIGHTLY_TARGET
