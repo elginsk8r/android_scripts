@@ -55,8 +55,8 @@ mirror_path = os.path.join('cron', DATE)
 log_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_logs')
 if os.path.isdir(log_dir) == False:
     os.mkdir(log_dir)
-log_file = os.path.join(log_dir, 'log-' + DATE + '.log')
-logging.basicConfig(filename=log_file, level=logging.INFO,
+scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
+logging.basicConfig(filename=scriptlog, level=logging.INFO,
             format='%(levelname)s:%(message)s')
 
 # make the remote directories
@@ -167,30 +167,29 @@ logging.info('Total run time: %s' % (datetime.datetime.now() - SCRIPT_START))
 # Finish up
 #
 
-# rewrite the log_file so build stuff is first
-with open(buildlog, 'r') as f:
-    buildlog_buf = f.read()
+# rewrite the scriptlog so build stuff is first
+if os.path.exists(buildlog) and os.path.exists(scriptlog):
+    with open(buildlog, 'r') as f:
+        buildlog_buf = f.read()
+    with open(scriptlog, 'r') as f:
+        scriptlog_buf = f.read()
+    with open(scriptlog, 'w') as f: # intentional truncate
+        for i in buildlog_buf:
+            f.write(i)
+        for i in scriptlog_buf:
+            f.write(i)
 
-with open(log_file, 'r') as f:
-    log_file_buf = f.read()
-
-with open(log_file, 'w') as f: # intentional truncate
-    for i in buildlog_buf:
-        f.write(i)
-    for i in log_file_buf:
-        f.write(i)
-
-# create html log_file
-if os.path.exists(log_file):
-    html_log_file = os.path.join(log_dir, 'log-' + DATE + '.html')
+# create html scriptlog
+if os.path.exists(scriptlog):
+    html_scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.html')
     bl = html.Create()
     bl.title('Nightly Log')
     bl.header(DATE)
-    bl.body(html.add_line_breaks(html.parse_file(log_file)))
-    bl.write(html_log_file)
+    bl.body(html.add_line_breaks(html.parse_file(scriptlog)))
+    bl.write(html_scriptlog)
     # add log to rsync queues
-    upq.put(html_log_file)
-    m_q.put(log_file)
+    upq.put(html_scriptlog)
+    m_q.put(scriptlog)
     # wait for complete
     m_q.join()
     upq.join()
