@@ -29,11 +29,10 @@ def rsync(local_file, remote_path, message='Synced'):
             start = datetime.datetime.now()
             subprocess.check_call(['rsync', '-P', local_file, remote_path], \
                         stdout=shadup, stderr=subprocess.STDOUT)
-            finish = datetime.datetime.now()
     except subprocess.CalledProcessError as e:
         logging.error('rsync returned %d for %s' \
                     % (e.returncode, os.path.basename(local_file)))
     else:
         logging.info("%s %s in %s" % (message, \
                     os.path.basename(local_file), \
-                    pretty.time(finish - start)))
+                    pretty.time(datetime.datetime.now() - start)))
