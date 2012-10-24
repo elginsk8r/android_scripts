@@ -110,6 +110,7 @@ if args.nosync:
         html_changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.html')
         cl = html.Create()
         cl.title('Changelog')
+        cl.css('body {font-family:"Lucida Console", Monaco, monospace;}')
         clbody = html.parse_file(changelog)
         cl.header(clbody[0])
         cl.body(html.add_line_breaks(clbody[1:]))
@@ -197,11 +198,12 @@ if os.path.exists(buildlog) and os.path.exists(scriptlog):
 # create html scriptlog
 if os.path.exists(scriptlog):
     html_scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.html')
-    bl = html.Create()
-    bl.title('Nightly Log')
-    bl.header(DATE)
-    bl.body(html.add_line_breaks(html.parse_file(scriptlog)))
-    bl.write(html_scriptlog)
+    sl = html.Create()
+    sl.title('Nightly Log')
+    sl.css('body {font-family:"Lucida Console", Monaco, monospace;}')
+    sl.header(DATE)
+    sl.body(html.add_line_breaks(html.parse_file(scriptlog)))
+    sl.write(html_scriptlog)
     # add log to rsync queues
     upq.put(html_scriptlog)
     m_q.put(scriptlog)
