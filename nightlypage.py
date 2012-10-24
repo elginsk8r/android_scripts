@@ -12,12 +12,8 @@ base_url = 'n'
 page_title = 'Evervolv Nightlies'
 css = '''
 body {
-    background-color:#0099CC;
     font-family:"Lucida Console", Monaco, monospace;
-    color:#FFFFFF;
 }
-a:link {color:#FFFFFF;}
-a:visited {color:#FFFFFF;}
 '''
 
 staging = []

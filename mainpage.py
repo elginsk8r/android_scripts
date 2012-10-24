@@ -9,12 +9,8 @@ body = [ '<a href="nightlies.html">Nightly Builds</a>',\
          '<a href="releases.html">Release Builds</a>' ]
 css = '''
 body {
-    background-color:#0099CC;
     font-family:"Lucida Console", Monaco, monospace;
-    color:#FFFFFF;
 }
-a:link {color:#FFFFFF;}
-a:visited {color:#FFFFFF;}
 '''
 
 m = html.Create()

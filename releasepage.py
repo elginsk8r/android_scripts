@@ -16,12 +16,8 @@ page_title = 'Evervolv Releases'
 mirror_base_url = 'r'
 css = '''
 body {
-    background-color:#0099CC;
     font-family:"Lucida Console", Monaco, monospace;
-    color:#FFFFFF;
 }
-a:link {color:#FFFFFF;}
-a:visited {color:#FFFFFF;}
 '''
 
 staging = []
