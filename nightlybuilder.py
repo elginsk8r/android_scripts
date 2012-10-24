@@ -26,7 +26,16 @@ parser.add_argument('--nosync', help="Don't sync or make changelog: for testing 
                     action="store_true")
 parser.add_argument('--nobuild', help="Don't build: for testing only",
                     action="store_true")
+parser.add_argument('--host', help="Hostname for upload")
+parser.add_argument('--user', help="Username for upload host")
+parser.add_argument('--mirror', help="Path for upload mirroring")
 args = parser.parse_args()
+
+# static vars
+NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(
+        os.path.realpath(__file__)), 'nightly')
+SCRIPT_START = datetime.datetime.now()
+DATE = SCRIPT_START.strftime('%Y.%m.%d')
 
 # script logging
 log_dir = os.path.join(args.source, 'nightly_logs')
@@ -37,18 +46,24 @@ logging.basicConfig(filename=scriptlog, level=logging.INFO,
         format='%(levelname)s:%(message)s')
 
 def main(args):
-    # static vars
-    NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
-    SCRIPT_START = datetime.datetime.now()
-    DATE = SCRIPT_START.strftime('%Y.%m.%d')
 
-    # pull common env variables
-    droid_user = os.getenv('DROID_USER')
-    droid_host = os.getenv('DROID_HOST')
-    local_mirror = os.getenv('DROID_MIRROR')
-    if not local_mirror:
-        local_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    # set vars for uploading/mirroring
+    if not args.user:
+        droid_user = os.getenv('DROID_USER')
+    else:
+        droid_user = args.user
+    if not args.host:
+        droid_host = os.getenv('DROID_HOST')
+    else:
+        droid_host = args.host
+    if not args.mirror:
+        local_mirror = os.getenv('DROID_MIRROR')
+        if not local_mirror:
+            local_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    else:
+        local_mirror = args.mirror
 
+    # these vars are mandatory
     if not droid_host or not droid_user or not local_mirror:
         print 'DROID_HOST or DROID_USER or DROID_LOCAL_MIRROR not set... Bailing'
         exit()
