@@ -23,9 +23,9 @@ parser.add_argument('target', help="Device(s) to build",
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
 parser.add_argument('--nosync', help="Don't sync or make changelog: for testing only",
-                    action="store_false")
+                    action="store_true")
 parser.add_argument('--nobuild', help="Don't build: for testing only",
-                    action="store_false")
+                    action="store_true")
 args = parser.parse_args()
 
 # static vars
@@ -54,7 +54,7 @@ mirror_path = os.path.join(local_mirror, 'cron', DATE)
 
 # script logging
 log_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_logs')
-if os.path.isdir(log_dir) == False:
+if not os.path.isdir(log_dir):
     os.mkdir(log_dir)
 scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
 logging.basicConfig(filename=scriptlog, level=logging.INFO,
@@ -67,7 +67,7 @@ try:
 except subprocess.CalledProcessError as e:
     logging.error('ssh returned %d while making directories' % (e.returncode))
 
-if os.path.isdir(mirror_path) == False:
+if not os.path.isdir(mirror_path):
     os.makedirs(mirror_path)
 
 # upload thread
@@ -90,10 +90,10 @@ t2.start()
 # Syncing
 #
 
-if args.nosync:
+if not args.nosync:
     # common directory for all changelogs
     changelog_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_changelogs')
-    if os.path.isdir(changelog_dir) == False:
+    if not os.path.isdir(changelog_dir):
         os.mkdir(changelog_dir)
     # changelog
     changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.log')
@@ -127,7 +127,7 @@ else:
 
 # buildlog (only used by the build script)
 buildlog_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_buildlogs')
-if os.path.isdir(buildlog_dir) == False:
+if not os.path.isdir(buildlog_dir):
     os.mkdir(buildlog_dir)
 buildlog = os.path.join(buildlog_dir, 'buildlog-' + DATE + '.log')
 
@@ -145,7 +145,7 @@ build_start = datetime.datetime.now()
 for target in args.target:
     os.putenv('EV_NIGHTLY_TARGET', target)
     # Run the build: target will be pulled from env
-    if args.nobuild:
+    if not args.nobuild:
         try:
             subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')],
                     shell=True)
