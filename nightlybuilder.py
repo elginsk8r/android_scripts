@@ -45,7 +45,9 @@ def main(args):
     # pull common env variables
     droid_user = os.getenv('DROID_USER')
     droid_host = os.getenv('DROID_HOST')
-    local_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    local_mirror = os.getenv('DROID_MIRROR')
+    if not local_mirror:
+        local_mirror = os.getenv('DROID_LOCAL_MIRROR')
 
     if not droid_host or not droid_user or not local_mirror:
         print 'DROID_HOST or DROID_USER or DROID_LOCAL_MIRROR not set... Bailing'
