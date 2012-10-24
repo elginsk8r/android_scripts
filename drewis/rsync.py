@@ -27,12 +27,12 @@ def rsync(local_file, remote_path, message='Synced'):
     try:
         with open(os.devnull, 'w') as shadup:
             start = datetime.datetime.now()
-            subprocess.check_call(['rsync', '-P', local_file, remote_path], \
+            subprocess.check_call(['rsync', '-P', local_file, remote_path],
                         stdout=shadup, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        logging.error('rsync returned %d for %s' \
+        logging.error('rsync returned %d for %s'
                     % (e.returncode, os.path.basename(local_file)))
     else:
-        logging.info("%s %s in %s" % (message, \
-                    os.path.basename(local_file), \
+        logging.info("%s %s in %s" % (message,
+                    os.path.basename(local_file),
                     pretty.time(datetime.datetime.now() - start)))

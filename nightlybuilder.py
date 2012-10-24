@@ -62,7 +62,7 @@ logging.basicConfig(filename=scriptlog, level=logging.INFO,
 
 # make the remote directories
 try:
-    subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host), \
+    subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host),
             'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
 except subprocess.CalledProcessError as e:
     logging.error('ssh returned %d while making directories' % (e.returncode))
@@ -72,16 +72,16 @@ if os.path.isdir(mirror_path) == False:
 
 # upload thread
 upq = Queue.Queue()
-t1 = rsync.rsyncThread(upq, \
-        '%s@%s:%s' % (droid_user, droid_host, upload_path), \
+t1 = rsync.rsyncThread(upq,
+        '%s@%s:%s' % (droid_user, droid_host, upload_path),
         message='Uploaded')
 t1.setDaemon(True)
 t1.start()
 
 # mirror thread
 m_q = Queue.Queue()
-t2 = rsync.rsyncThread(m_q, \
-        mirror_path, \
+t2 = rsync.rsyncThread(m_q,
+        mirror_path,
         message='Mirrored')
 t2.setDaemon(True)
 t2.start()
@@ -101,7 +101,7 @@ if args.nosync:
     os.putenv('EV_CHANGELOG', changelog)
     # sync the tree
     try:
-        subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')], \
+        subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')],
                 shell=True)
     except subprocess.CalledProcessError as e:
         logging.error('sync returned %d' % (e.returncode))
@@ -147,7 +147,7 @@ for target in args.target:
     # Run the build: target will be pulled from env
     if args.nobuild:
         try:
-            subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')], \
+            subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')],
                     shell=True)
         except subprocess.CalledProcessError as e:
             logging.error('Building returned %d for %s' % (e.returncode, target))
@@ -168,7 +168,8 @@ for target in args.target:
 
 # write total buildtime
 with open(buildlog, 'a') as f:
-    f.write('INFO:Built all targets in %s\n' % (pretty.time(datetime.datetime.now() - build_start)))
+    f.write('INFO:Built all targets in %s\n' %
+            (pretty.time(datetime.datetime.now() - build_start)))
 
 # wait for builds to finish uploading/mirroring
 m_q.join()
@@ -177,7 +178,8 @@ upq.join()
 # cleanup
 shutil.rmtree(temp_dir)
 
-logging.info('Total run time: %s' % (pretty.time(datetime.datetime.now() - SCRIPT_START)))
+logging.info('Total run time: %s' %
+        (pretty.time(datetime.datetime.now() - SCRIPT_START)))
 
 #
 # Finish up
