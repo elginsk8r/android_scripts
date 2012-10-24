@@ -22,13 +22,13 @@ parser.add_argument('target', help="Device(s) to build",
                     nargs='+')
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
-parser.add_argument('--nosync', help="Don't sync or make changelog: for testing only",
-                    action="store_true")
-parser.add_argument('--nobuild', help="Don't build: for testing only",
-                    action="store_true")
 parser.add_argument('--host', help="Hostname for upload")
 parser.add_argument('--user', help="Username for upload host")
 parser.add_argument('--mirror', help="Path for upload mirroring")
+parser.add_argument('--nosync', help=argparse.SUPPRESS,
+                    action="store_true")
+parser.add_argument('--nobuild', help=argparse.SUPPRESS,
+                    action="store_true")
 args = parser.parse_args()
 
 # static vars
