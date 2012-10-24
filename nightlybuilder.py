@@ -28,6 +28,14 @@ parser.add_argument('--nobuild', help="Don't build: for testing only",
                     action="store_true")
 args = parser.parse_args()
 
+# script logging
+log_dir = os.path.join(args.source, 'nightly_logs')
+if not os.path.isdir(log_dir):
+    os.mkdir(log_dir)
+scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
+logging.basicConfig(filename=scriptlog, level=logging.INFO,
+        format='%(levelname)s:%(message)s')
+
 def main(args):
     # static vars
     NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'nightly')
@@ -52,14 +60,6 @@ def main(args):
 
     # mirror path
     mirror_path = os.path.join(local_mirror, 'cron', DATE)
-
-    # script logging
-    log_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_logs')
-    if not os.path.isdir(log_dir):
-        os.mkdir(log_dir)
-    scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
-    logging.basicConfig(filename=scriptlog, level=logging.INFO,
-                format='%(levelname)s:%(message)s')
 
     # make the remote directories
     try:
