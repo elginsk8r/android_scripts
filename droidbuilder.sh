@@ -205,7 +205,7 @@ fi
 
 while getopts ":nsdhimlup:t:w:j:rqza:" opt; do
     case $opt in
-        p) UL_DIR=$OPTARG
+        p) UL_DIR=$OPTARG;;
         n) NIGHTLY=1;;
         s) SYNC=1;;
         d) UPLOAD=0;;
