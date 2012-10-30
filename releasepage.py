@@ -38,8 +38,17 @@ for i in staging:
 r = html.Create()
 r.title(page_title)
 r.css(css)
+r.script('<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>')
+r.script('<script type="text/javascript" src="js/scripts.js"></script>')
 r.script(analytics.Get())
 r.header(page_title)
 r.body(warning_message)
-r.body(html.tup_to_ul(final))
+r.body([ '<div id="listContainer">',
+         ' <div class="listControl">',
+         '  <a id="expandList">Expand all</a>',
+         ' | ',
+         '  <a id="collapseList">Collapse all</a>',
+         ' </div>' ])
+r.body(html.tup_to_ul(final,True))
+r.body([ '</div>' ])
 r.write('releases.html')
