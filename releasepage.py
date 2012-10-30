@@ -31,7 +31,7 @@ final = []
 for i in staging:
     if i[1] and devices.is_device(i[0]):
         final.append(('%s %s:' % (i[0],devices.get_device_name(i[0])), [ j for j in
-                html.make_links_with_mirror(i[1], '%s/%s' % (base_url, i[0]),
+                html.make_analytic_links_with_mirror(i[1], '%s/%s' % (base_url, i[0]),
                 '%s/%s' % (mirror_base_url, i[0]),
                 'ReleaseClick') ]))
 
