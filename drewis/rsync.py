@@ -11,16 +11,20 @@ import pretty
 
 class rsyncThread(threading.Thread):
     '''Threaded rsync task'''
-    def __init__(self, queue, p_remote, message='Synced'):
+    def __init__(self, queue, remote_path=None, message='Synced'):
         threading.Thread.__init__(self)
         self.queue = queue
-        self.p_remote = p_remote
+        self.remote_path = remote_path
         self.message = message
 
     def run(self):
         while True:
-            f_local = self.queue.get()
-            rsync(f_local, self.p_remote, self.message)
+            if self.remote_path:
+                remote_path = self.remote_path
+                local_file = self.queue.get()
+            else:
+                local_file, remote_path = self.queue.get()
+            rsync(local_file, remote_path, self.message)
             self.queue.task_done()
 
 def rsync(local_file, remote_path, message='Synced'):
