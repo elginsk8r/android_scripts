@@ -2,7 +2,7 @@
 # Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 import argparse
-import datetime
+from datetime import datetime
 import logging
 import os
 import shutil
@@ -13,7 +13,7 @@ import Queue
 # local
 from drewis import html, rsync, pretty
 
-VERSION = '0.8'
+VERSION = '0.9'
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -34,8 +34,7 @@ args = parser.parse_args()
 # static vars
 NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(
         os.path.realpath(__file__)), 'nightly')
-SCRIPT_START = datetime.datetime.now()
-DATE = SCRIPT_START.strftime('%Y.%m.%d')
+DATE = datetime.now().strftime('%Y.%m.%d')
 
 # script logging
 log_dir = os.path.join(args.source, 'nightly_logs')
@@ -46,6 +45,9 @@ logging.basicConfig(filename=scriptlog, level=logging.INFO,
         format='%(levelname)s:%(message)s')
 
 def main(args):
+
+    # for total runtime
+    script_start = datetime.now()
 
     # set vars for uploading/mirroring
     if not args.user:
@@ -143,21 +145,14 @@ def main(args):
     # Building
     #
 
-    # buildlog (only used by the build script)
-    buildlog_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_buildlogs')
-    if not os.path.isdir(buildlog_dir):
-        os.mkdir(buildlog_dir)
-    buildlog = os.path.join(buildlog_dir, 'buildlog-' + DATE + '.log')
-
     # export vars for the build script
-    os.putenv('EV_BUILDLOG', buildlog)
     os.putenv('NIGHTLY_BUILD', 'true')
 
     # for zip storage
     temp_dir = tempfile.mkdtemp()
 
     # keep track of builds
-    build_start = datetime.datetime.now()
+    build_start = datetime.now()
 
     # build each target
     for target in args.target:
@@ -165,10 +160,16 @@ def main(args):
         # Run the build: target will be pulled from env
         if not args.nobuild:
             try:
-                subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'build.sh')],
-                        shell=True)
+                with open(os.devnull, 'w') as shadup:
+                    target_start = datetime.now()
+                    subprocess.check_call([os.path.join(
+                            NIGHTLY_SCRIPT_DIR, 'build.sh')],
+                            stdout=shadup, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
-                logging.error('Building returned %d for %s' % (e.returncode, target))
+                logging.error('Build returned %d for %s' % (e.returncode, target))
+            else:
+                logging.info('Built %s in %s' %
+                        (target, pretty.time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
         zips = []
         target_out_dir = os.path.join('out', 'target', 'product', target)
@@ -185,9 +186,8 @@ def main(args):
             logging.warning('No zips found for %s' % target)
 
     # write total buildtime
-    with open(buildlog, 'a') as f:
-        f.write('INFO:Built all targets in %s\n' %
-                (pretty.time(datetime.datetime.now() - build_start)))
+    logging.info('Built all targets in %s' %
+            (pretty.time(datetime.now() - build_start)))
 
     # wait for builds to finish uploading/mirroring
     m_q.join()
@@ -197,23 +197,11 @@ def main(args):
     shutil.rmtree(temp_dir)
 
     logging.info('Total run time: %s' %
-            (pretty.time(datetime.datetime.now() - SCRIPT_START)))
+            (pretty.time(datetime.now() - script_start)))
 
     #
     # Finish up
     #
-
-    # rewrite the scriptlog so build stuff is first
-    if os.path.exists(buildlog) and os.path.exists(scriptlog):
-        with open(buildlog, 'r') as f:
-            buildlog_buf = f.read()
-        with open(scriptlog, 'r') as f:
-            scriptlog_buf = f.read()
-        with open(scriptlog, 'w') as f: # intentional truncate
-            for i in buildlog_buf:
-                f.write(i)
-            for i in scriptlog_buf:
-                f.write(i)
 
     # create html scriptlog
     if os.path.exists(scriptlog):
