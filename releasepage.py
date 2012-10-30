@@ -72,7 +72,6 @@ body {
 }
 .listControl a {
     border: 1px solid #555555;
-    color: #555555;
     cursor: pointer;
     height: 1.5em;
     line-height: 1.5em;
@@ -80,9 +79,7 @@ body {
     padding: 4px 10px;
 }
 .listControl a:hover {
-    background-color:#555555;
-    color:#222222;
-    font-weight:normal;
+    background-color:#0099CC;
 }
 '''
 
