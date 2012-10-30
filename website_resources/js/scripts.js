@@ -10,9 +10,12 @@ function prepareList() {
         }
         return false;
     })
-    .addClass('collapsed')
-    .children('ul').hide();
-
+    .addClass('collapsed').children('ul').hide();
+    //Hack to add links inside the cv
+    $('#expList a').unbind('click').click(function() {
+        window.open($(this).attr('href'));
+        return false;
+    });
     //Create the button funtionality
     $('#expandList')
     .unbind('click')
