@@ -45,7 +45,16 @@ final.reverse() # newest first
 n = html.Create()
 n.title(page_title)
 n.css(css)
-n.analytics(analytics.Get())
+n.script('<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>')
+n.script('<script type="text/javascript" src="js/scripts.js"></script>')
+n.script(analytics.Get())
 n.header(page_title)
-n.body(html.tup_to_ul(final))
+n.body( [ '<div id="listContainer">',
+          ' <div class="listControl">',
+          '  <a id="expandList">Expand all</a></br>',
+          ' | ',
+          '  <a id="collapseList">Collapse all</a>',
+          ' </div>' ] +
+        html.tup_to_ul(final,True) +
+        [ '</div>' ])
 n.write('nightlies.html')
