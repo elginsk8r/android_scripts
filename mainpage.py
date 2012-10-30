@@ -16,7 +16,7 @@ body {
 m = html.Create()
 m.title(page_title)
 m.css(css)
-m.analytics(analytics.Get())
+m.script(analytics.Get())
 m.header(page_title)
 m.body(html.list_to_ul(body))
 m.write('index.html')

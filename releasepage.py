@@ -38,7 +38,7 @@ for i in staging:
 r = html.Create()
 r.title(page_title)
 r.css(css)
-r.analytics(analytics.Get())
+r.script(analytics.Get())
 r.header(page_title)
 r.body(warning_message)
 r.body(html.tup_to_ul(final))
