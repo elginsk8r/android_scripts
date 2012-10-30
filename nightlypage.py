@@ -15,6 +15,8 @@ body {
     font-family:"Lucida Console", Monaco, monospace;
 }
 
+a:link {color:#0099CC;}
+
 #menu {
     list-style: none;
     padding: 0;

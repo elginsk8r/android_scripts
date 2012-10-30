@@ -11,6 +11,7 @@ css = '''
 body {
     font-family:"Lucida Console", Monaco, monospace;
 }
+a:link {color:#0099CC;}
 '''
 
 m = html.Create()
