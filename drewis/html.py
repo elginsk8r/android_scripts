@@ -80,14 +80,23 @@ def tup_to_ul(i):
     l.append('</ul>')
     return l
 
-def make_links(i, p, action='Click'):
+def make_links(i, p):
+    '''takes list, link prefix and optional action to report to analytics'''
+    return [ '<a href="%s/%s">%s</a>' % (p,j,j) for j in i ]
+
+def make_analytic_links(i, p, action='Click'):
     '''takes list, link prefix and optional action to report to analytics'''
     return [ '<a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \'%s\', \
         \'%s\']);">%s</a>' % (p,j,action,j,j) for j in i ]
 
-def make_links_with_mirror(i,p,m,action='Click'):
+def make_links_with_mirror(i, p, m):
+    '''takes list, link prefix, mirror prefix, and optional action for analytics'''
+    return [ '<a href="%s/%s">%s</a> <a href="%s/%s">(mirror)</a>' %
+        (p,j,j,m,j) for j in i ]
+
+def make_analytic_links_with_mirror(i, p, m, action='Click'):
     '''takes list, link prefix, mirror prefix, and optional action for analytics'''
     return [ '<a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \'%s\', \
         \'%s\']);">%s</a> <a href="%s/%s" onClick="_gaq.push([\'_trackEvent\', \
-        \'%s\', \'%s\']);">(mirror)</a>' % \
+        \'%s\', \'%s\']);">(mirror)</a>' %
         (p,j,action,j,j,m,j,action,j) for j in i ]
