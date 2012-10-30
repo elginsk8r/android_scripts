@@ -26,8 +26,19 @@ for d in sorted(os.listdir(base_path)):
 final = []
 for i in staging:
     if i[1]:
-        final.append((i[0], [ j for j in html.make_links(i[1],
-                    '%s/%s' % (base_url, i[0]), 'NightlyClick') ]))
+        # We only want to track clicks for zip files
+        # so slit into two lists and concat them for final tuple
+        temp_zips = []
+        temp_other = []
+        for f in i[1]:
+            if f.endswith('.zip'):
+                temp_zips.append(f)
+            else:
+                temp_other.append(f)
+        final.append((i[0],
+            html.make_analytic_links(temp_zips,
+                '%s/%s' % (base_url, i[0]), 'NightlyClick') +
+            html.make_links(temp_other, '%s/%s' % (base_url, i[0]))))
 
 final.reverse() # newest first
 
