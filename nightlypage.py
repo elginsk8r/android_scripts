@@ -51,7 +51,7 @@ n.script(analytics.Get())
 n.header(page_title)
 n.body( [ '<div id="listContainer">',
           ' <div class="listControl">',
-          '  <a id="expandList">Expand all</a></br>',
+          '  <a id="expandList">Expand all</a>',
           ' | ',
           '  <a id="collapseList">Collapse all</a>',
           ' </div>' ] +
