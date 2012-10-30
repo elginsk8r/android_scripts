@@ -7,6 +7,7 @@ class Create(object):
         self.text = ['<!DOCTYPE html>',
                     '<html>',
                     '<head>',
+                    '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />',
                     '<title>','</title>',
                     '<style type="text/css">','</style>',
                     '</head>',
@@ -25,7 +26,7 @@ class Create(object):
         i = self.text.index('</style>')
         self.text.insert(i, css)
 
-    def analytics(self, script):
+    def script(self, script):
         '''takes string'''
         i = self.text.index('</head>')
         self.text.insert(i, script)
@@ -66,17 +67,21 @@ def list_to_ul(i):
     l.append('</ul>')
     return l
 
-def tup_to_ul(i):
+def tup_to_ul(i, expandable=False):
     '''takes tuple as [(d, [z, z, ...]), ...] and creates a nested ul, returns list'''
     l = []
     for j in i:
         k,q = j
-        l.append(' <li>%s</li>' % k)
+        l.append(' <li>%s' % k)
         l.append('  <ul>')
         for r in q:
             l.append('   <li>%s</li>' % r)
         l.append('  </ul>')
-    l.insert(0,'<ul>')
+        l.append(' </li>')
+    if expandable:
+        l.insert(0, '<ul id="expList">')
+    else:
+        l.insert(0,'<ul>')
     l.append('</ul>')
     return l
 
