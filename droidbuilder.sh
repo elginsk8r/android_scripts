@@ -11,8 +11,8 @@
 # DROID_HOST
 # DROID_HOST_PORT (defaults to 22 if not specified)
 #
-# to keep local copies of releases something like
-# /media/NFS/releases/<codename> (codename is appended)
+# to keep local copies something like
+# /media/NFS/
 # DROID_LOCAL_MIRROR
 #
 
@@ -28,8 +28,6 @@ UL_PATH="~/uploads/"
 # $ZIPPREFIX followed by anything, then $target followed by anything, then .zip
 # where $target is element of $TARGETLIST
 ZIPPREFIX="Evervolv"
-# vendor path (ie /vendor/ev)
-SHORTVENDOR="ev"
 # report file
 REPORT_FILE=~/db-logs/buildlog-${DATE}.log
 # create log directory
@@ -44,7 +42,6 @@ KERNEL=0
 PMINI=0
 LBUILD=0
 DISABLECCACHE=0
-RELEASEBUILD=0
 KERNJOBS=0
 QUIET=0
 MIRRORUPLOAD=0
@@ -57,7 +54,7 @@ TIMESTART=`date +%s`
 function print_help() {
 cat <<EOF
 Usage:
-  `basename $0` -dhilmnqrsu -t <target>|"<target> <target>"
+  `basename $0` -dhilmnqsu -t <target>|"<target> <target>"
                   -j <jobs> -p|a <path> -w <workingdir>
 Options:
 -a     append upload path ${UL_PATH}${UL_DIR}-<OPTARG>
@@ -70,12 +67,11 @@ Options:
 -n     build nightly
 -p     set upload path ${UL_PATH}/<OPTARG>
 -q     route build output to /dev/null
--r     release build (uploads to <codename>) (implies -z)
 -s     sync repo (also generates changelog)
 -t     build specified target(s) (multiple targets must be in quotes)
 -u     disable ccache (uncached)
 -w     working directory (requires arg)
--z     mirror upload locally
+-z     mirror build locally
 Additional Arguments:
 help   show this help
 EOF
@@ -119,6 +115,11 @@ function calc_run_time() {
 }
 
 # no args
+function sync_only () {
+    repo sync -fd -j 12 || log_fail "Repo returned non zero"
+}
+
+# no args
 function get_changelog() {
     local current previous changelog changelogfile
     current=$DATE
@@ -126,7 +127,7 @@ function get_changelog() {
     previous=`git status -bsz`
     previous=${previous#\#\#\ }     # Too hacky?
     popd
-    test "$previous" = "(no branch)" && return 1
+    test "$previous" = "(no branch)" && sync_only
     changelog="${previous}..${current}"
     test -d changelogs || mkdir changelogs
     changelogfile=changelogs/gitlog-${changelog}.log
@@ -147,24 +148,10 @@ function push_upload () {
     rsync -P -e "ssh -p${DROID_HOST_PORT}" ${local_file} ${DROID_USER}@${DROID_HOST}:${remote_path} || log_fail uploading $target
 }
 
-# one arg: board name: sets global DEVCODENAME
-function get_device_codename () {
-    local board devicedir codename
-    board=$1
-    devicedir=`find device/ -type d -name $board`
-    codename=`cat ${devicedir}/${SHORTVENDOR}.mk | grep PRODUCT_CODENAME | sed -e s/\ //g -e s/PRODUCT_CODENAME\:=//`
-    DEVCODENAME="${codename}/"
-}
-
 # 2 args: local path to file, device codename
 function mirror_upload () {
     local local_file=$1
-    local dev_codename=$2
-    if [ $RELEASEBUILD -eq 1 ]; then
-        local mirror_path="${DROID_LOCAL_MIRROR}/${dev_codename}"
-    else
-        local mirror_path="${DROID_LOCAL_MIRROR}/${UL_DIR}"
-    fi
+    local mirror_path="${DROID_LOCAL_MIRROR}/${UL_DIR}"
     [ -z "$DROID_LOCAL_MIRROR" ] && logit "DROID_LOCAL_MIRROR not set" && return
     [ -d $mirror_path ] || mkdir -p $mirror_path
     logit "Mirroring $(basename $local_file)"
@@ -203,7 +190,7 @@ if [ "$1" = "help" ]; then
     print_help; bail;
 fi
 
-while getopts ":nsdhimlup:t:w:j:rqza:" opt; do
+while getopts ":nsdhimlup:t:w:j:qza:" opt; do
     case $opt in
         p) UL_DIR=$OPTARG;;
         n) NIGHTLY=1;;
@@ -218,7 +205,6 @@ while getopts ":nsdhimlup:t:w:j:rqza:" opt; do
         l) LBUILD=1;DISABLECCACHE=1;KERNEL=1;;
         u) DISABLECCACHE=1;;
         w) WORKING_DIR="$OPTARG";;
-        r) RELEASEBUILD=1;MIRRORUPLOAD=1;;
         q) QUIET=1;;
         z) MIRRORUPLOAD=1;;
         \?) echo "Invalid option -$OPTARG"; print_help; bail;;
@@ -232,34 +218,20 @@ if [ $UPLOAD -eq 1 ]; then
     [ -z "$DROID_HOST_PORT" ] && DROID_HOST_PORT=22
 fi
 
-# Try and avoid mixed builds
-[ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
-
-[ -n "$WORKING_DIR" ] && pushd "$WORKING_DIR"
-[ -e build/envsetup.sh ] || bail "You are not in the build tree"
-# Set env
-. build/envsetup.sh >/dev/null 2>&1
-
 # device array
-if [ -e vendor/$SHORTVENDOR/vendorsetup.sh ] && [ -z "$TARGETLIST" ]; then
-    TARGETLIST=($(<vendor/$SHORTVENDOR/vendorsetup.sh))
-    # at this point every other entry is add_lunch_combo, so remove them
-    TARGETLIST=(${TARGETLIST[@]/add_lunch_combo/})
-    # the rest of this script relies on uniform naming, ie passion
-    # ev_passion-eng will not work so remove pre/post fixes
-    TARGETLIST=(${TARGETLIST[@]#*_})
-    TARGETLIST=(${TARGETLIST[@]%-*})
-fi
-
-# Just in case
-[ -z "$TARGETLIST" ] && bail "Unable to fetch build targets"
-
-# Set full upload path now (execpt for releases which are appended later)
-[ $RELEASEBUILD -eq 0 ] && UL_PATH+="${UL_DIR}/"
-
+[ -z "$TARGETLIST" ] && bail "No build targets"
+# Set full upload path now
+UL_PATH+="${UL_DIR}/"
 # Append the miniskirt target for use later
 [ $PMINI -eq 1 ] && TARGETLIST=(${TARGETLIST[@]} miniskirt)
-
+# Try and avoid mixed builds
+[ $DISABLECCACHE -eq 1 ] && [ -n "$USE_CCACHE" ] && unset USE_CCACHE
+# cd working dir
+[ -n "$WORKING_DIR" ] && pushd "$WORKING_DIR"
+[ -e build/envsetup.sh ] || bail "You are not in the build tree"
+# set env
+. build/envsetup.sh >/dev/null 2>&1
+# sync
 test $SYNC -eq 1 && get_changelog
 
 # loop the TARGETLIST array and build all targets present
@@ -304,43 +276,39 @@ for (( ii=0 ; ii < ${#TARGETLIST[@]} ; ii++ )) ; do
     startime=`date +%s`
 
     logit "Make with: $buildargs"
+    threads=$(($(cat /proc/meminfo | head -n1 | awk '{print $2}')/1000000))
+    test $(($threads % 2)) -eq 1 && ((threads++))
     if [ $QUIET -eq 1 ]; then
-        ( schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs >/dev/null 2>&1 ) &
+        ( make -j $threads $buildargs >/dev/null 2>&1 ) &
         spinner $! "Working..."
     else
-        schedtool -B -n 0 -e ionice -n 0 make -j 16 $buildargs || { log_fail make $target; continue; }
+        make -j $threads $buildargs || { log_fail make $target; continue; }
     fi
 
     calc_run_time $startime "--End building"
 
     # upload
-    # for releases append an extra path
-    if [ $RELEASEBUILD -eq 1 ]; then
-        get_device_codename $target
-    else
-        DEVCODENAME=""
-    fi
-    [ $UPLOAD -eq 0 ] && continue
     zips="$(find out/target/product/$target -name ${ZIPPREFIX}*.zip)"
     for zipfile in $zips; do
-        push_upload "$zipfile" "${UL_PATH}${DEVCODENAME}"
-        test $MIRRORUPLOAD -eq 1 && mirror_upload "$zipfile" "$DEVCODENAME"
+        test $UPLOAD -eq 1 && push_upload "$zipfile" "${UL_PATH}"
+        test $MIRRORUPLOAD -eq 1 && mirror_upload "$zipfile"
     done
 
 done
 
 # cleanup
-if [ $UPLOAD -eq 1 ]; then
+if [ $UPLOAD -eq 1 ] || [ $MIRRORUPLOAD -eq 1 ]; then
     make clobber >/dev/null 2>&1 || log_fail clobber $target
 fi
-
 # print failures if there are any to report
 [ $FAILNUM -gt 0 ] && print_failures
-
+# total runtime
 calc_run_time $TIMESTART
-
 # copy build log
 test $MIRRORUPLOAD -eq 1 && mirror_upload $REPORT_FILE
-
+# extra info
+echo "Build report at $REPORT_FILE"
+# get back to where we were
 [ -n "$WORKING_DIR" ] && popd
-exit
+# and were done
+exit 0
