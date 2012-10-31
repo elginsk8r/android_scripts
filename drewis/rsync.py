@@ -11,10 +11,11 @@ import pretty
 
 class rsyncThread(threading.Thread):
     '''Threaded rsync task'''
-    def __init__(self, queue, remote_path=None, message='Synced'):
+    def __init__(self, queue, remote_path=None, port=None, message='Synced'):
         threading.Thread.__init__(self)
         self.queue = queue
         self.remote_path = remote_path
+        self.port = port
         self.message = message
 
     def run(self):
@@ -24,14 +25,19 @@ class rsyncThread(threading.Thread):
                 local_file = self.queue.get()
             else:
                 local_file, remote_path = self.queue.get()
-            rsync(local_file, remote_path, self.message)
+            rsync(local_file, remote_path, self.port, self.message)
             self.queue.task_done()
 
-def rsync(local_file, remote_path, message='Synced'):
+def rsync(local_file, remote_path, port=None, message='Synced'):
     try:
         with open(os.devnull, 'w') as shadup:
             start = datetime.datetime.now()
-            subprocess.check_call(['rsync', '-P', local_file, remote_path],
+            if port:
+                subprocess.check_call(['rsync', '-e ssh -p%s' % (port),
+                        '-P', local_file, remote_path],
+                        stdout=shadup, stderr=subprocess.STDOUT)
+            else:
+                subprocess.check_call(['rsync', '-P', local_file, remote_path],
                         stdout=shadup, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         logging.error('rsync returned %d for %s'
