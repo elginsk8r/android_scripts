@@ -23,6 +23,7 @@ parser.add_argument('target', help="Device(s) to build",
 parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
 parser.add_argument('--host', help="Hostname for upload")
+parser.add_argument('--port', help="Listen port for host sshd")
 parser.add_argument('--user', help="Username for upload host")
 parser.add_argument('--mirror', help="Path for upload mirroring")
 parser.add_argument('--nobuild', help=argparse.SUPPRESS,
@@ -73,6 +74,12 @@ def main(args):
             local_mirror = os.getenv('DROID_LOCAL_MIRROR')
     else:
         local_mirror = args.mirror
+    if not args.port:
+        droid_host_port = os.getenv('DROID_HOST_PORT')
+        if not droid_host_port:
+            droid_host_port = '22'
+    else:
+        droid_host_port = args.port
 
     # these vars are mandatory
     if not droid_host or not droid_user or not local_mirror:
@@ -91,15 +98,13 @@ def main(args):
 
     # upload thread
     upq = Queue.Queue()
-    t1 = rsync.rsyncThread(upq,
-            message='Uploaded')
+    t1 = rsync.rsyncThread(upq, port=droid_host_port, message='Uploaded')
     t1.setDaemon(True)
     t1.start()
 
     # mirror thread
     m_q = Queue.Queue()
-    t2 = rsync.rsyncThread(m_q,
-            message='Mirrored')
+    t2 = rsync.rsyncThread(m_q, message='Mirrored')
     t2.setDaemon(True)
     t2.start()
 
@@ -140,7 +145,8 @@ def main(args):
             if codename:
                 # make the remote directories
                 try:
-                    subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host),
+                    subprocess.check_call(['ssh', '-p%s' % (droid_host_port),
+                            '%s@%s' % (droid_user, droid_host),
                             'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
                             codename),os.path.join(upload_path, codename))])
                 except subprocess.CalledProcessError as e:
