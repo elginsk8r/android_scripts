@@ -31,7 +31,7 @@ parser.add_argument('--nobuild', help=argparse.SUPPRESS,
 args = parser.parse_args()
 
 # static vars
-SCRIPT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'release')
+HELPER_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers')
 DATE = datetime.now().strftime('%Y.%m.%d')
 
 # script logging
@@ -126,7 +126,7 @@ def main(args):
             try:
                 with open(os.devnull, 'w') as shadup:
                     target_start = datetime.now()
-                    subprocess.check_call([os.path.join(SCRIPT_DIR, 'build.sh')],
+                    subprocess.check_call([os.path.join(HELPER_DIR, 'build.sh')],
                             stdout=shadup, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 logging.error('Build returned %d for %s' % (e.returncode, target))
@@ -152,7 +152,6 @@ def main(args):
                 except subprocess.CalledProcessError as e:
                     logging.error('ssh returned %d while making directories' %
                             (e.returncode))
-                    continue
 
                 if not os.path.isdir(os.path.join(mirror_path, codename)):
                     os.makedirs(os.path.join(mirror_path, codename))

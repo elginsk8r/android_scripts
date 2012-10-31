@@ -32,8 +32,7 @@ parser.add_argument('--nobuild', help=argparse.SUPPRESS,
 args = parser.parse_args()
 
 # static vars
-NIGHTLY_SCRIPT_DIR = os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), 'nightly')
+HELPER_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers')
 DATE = datetime.now().strftime('%Y.%m.%d')
 
 # script logging
@@ -121,7 +120,7 @@ def main(args):
         os.putenv('EV_CHANGELOG', changelog)
         # sync the tree
         try:
-            subprocess.check_call([os.path.join(NIGHTLY_SCRIPT_DIR, 'sync.sh')],
+            subprocess.check_call([os.path.join(HELPER_DIR, 'sync.sh')],
                     shell=True)
         except subprocess.CalledProcessError as e:
             logging.error('sync returned %d' % (e.returncode))
@@ -156,14 +155,14 @@ def main(args):
 
     # build each target
     for target in args.target:
-        os.putenv('EV_NIGHTLY_TARGET', target)
+        os.putenv('EV_BUILD_TARGET', target)
         # Run the build: target will be pulled from env
         if not args.nobuild:
             try:
                 with open(os.devnull, 'w') as shadup:
                     target_start = datetime.now()
                     subprocess.check_call([os.path.join(
-                            NIGHTLY_SCRIPT_DIR, 'build.sh')],
+                            HELPER_DIR, 'build.sh')],
                             stdout=shadup, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 logging.error('Build returned %d for %s' % (e.returncode, target))
