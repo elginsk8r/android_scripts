@@ -5,7 +5,7 @@ import os
 
 from sys import argv
 
-from drewis import html,analytics
+from drewis import html, analytics, util
 
 from ev import devices
 
@@ -85,20 +85,19 @@ a:link {color:#0099CC;}
 }
 '''
 
-staging = []
-for d in sorted(os.listdir(base_path)):
-    if os.path.isdir(os.path.join(base_path,d)):
-        z = [ f for f in sorted(os.listdir(os.path.join(base_path,d)))
-                    if f.endswith('.zip') ]
-        staging.append((d,z))
-
+staging = util.get_files_with_sums(base_path)
 final = []
 for i in staging:
-    if i[1] and devices.is_device(i[0]):
-        final.append(('%s %s:' % (i[0],devices.get_device_name(i[0])), [ j for j in
-                html.make_analytic_links_with_mirror(i[1], '%s/%s' % (base_url, i[0]),
-                '%s/%s' % (mirror_base_url, i[0]),
-                'ReleaseClick') ]))
+    temp = []
+    for f in i[1]:
+        z, m = f
+        if z.endswith('.zip'): # We only care about zips here
+            links = html.make_analytic_links_with_mirror([z],
+                    '%s/%s' % (base_url, i[0]),
+                    '%s/%s' % (mirror_base_url, i[0]),
+                    'ReleaseClick')
+            temp.append('%s MD5:%s' % (links[0], m))
+    final.append((i[0],temp))
 
 r = html.Create()
 r.title(page_title)
