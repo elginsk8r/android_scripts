@@ -5,7 +5,7 @@ import os
 
 from sys import argv
 
-from drewis import html, analytics, util
+from drewis import html,analytics
 
 script, base_path = argv
 base_url = 'n'
@@ -81,32 +81,29 @@ a:link {color:#0099CC;}
 }
 '''
 
-staging = util.get_files_with_sums(base_path)
+staging = []
+for d in sorted(os.listdir(base_path)):
+    if os.path.isdir(os.path.join(base_path,d)):
+        z = [ f for f in sorted(os.listdir(os.path.join(base_path,d)))
+                    if f.endswith('.zip') or f.endswith('.html') ]
+        staging.append((d,z))
+
 final = []
 for i in staging:
-    # We only want to track clicks for zip files
-    # and the html wont have md5sums
-    # so slit into two lists
-    temp_zips = []
-    temp_other = []
-    for f in i[1]:
-        if f[0].endswith('.zip'):
-            temp_zips.append(f)
-        else:
-            temp_other.append(f)
-    temp = []
-    for f in temp_zips:
-        z, m = f
-        links = html.make_analytic_links([f[0]],
-                '%s/%s' % (base_url, i[0]),
-                'NightlyClick')
-        temp.append('%s MD5:%s' % (links[0], m))
-    for f in temp_other:
-        z, m = f
-        links = html.make_links([f[0]],
-                '%s/%s' % (base_url, i[0]))
-        temp.append(links[0])
-    final.append((i[0],temp))
+    if i[1]:
+        # We only want to track clicks for zip files
+        # so slit into two lists and concat them for final tuple
+        temp_zips = []
+        temp_other = []
+        for f in i[1]:
+            if f.endswith('.zip'):
+                temp_zips.append(f)
+            else:
+                temp_other.append(f)
+        final.append((i[0],
+            html.make_analytic_links(temp_zips,
+                '%s/%s' % (base_url, i[0]), 'NightlyClick') +
+            html.make_links(temp_other, '%s/%s' % (base_url, i[0]))))
 
 final.reverse() # newest first
 
