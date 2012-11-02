@@ -9,8 +9,8 @@ run_build () {
     source build/envsetup.sh >/dev/null 2>&1 || return 1
     breakfast $target        >/dev/null 2>&1 || return 1
     make clobber             >/dev/null 2>&1 || return 1
-    make -j $threads $args   2>&1 >/dev/null | grep -B 1 -A 6 -e error:
-    return ${PIPESTATUS[0]} # Return code for make
+    make -j $threads $args   >/dev/null      || return 1
+    return 0
 }
 
 run_build $EV_BUILD_TARGET

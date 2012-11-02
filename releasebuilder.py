@@ -54,6 +54,27 @@ def get_codename(target):
                             codename = line.split(' ')[2]
     return codename
 
+def handle_build_errors(error_file):
+    grepcmds = [
+        ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
+        ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
+        ('JAVA:', ('grep', '-B 20', '-e errors$')),
+        ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
+    with open(error_file) as f:
+        logging.error('Dumping errors...')
+        for grepcmd in grepcmds:
+            try:
+                errors = subprocess.check_output(grepcmd[1], stdin=f)
+            except subprocess.CalledProcessError as e:
+                pass
+            else:
+                if errors:
+                    logging.error(grepcmd[0])
+                    for line in errors.split('\n'):
+                        logging.error(line)
+            f.seek(0)
+        logging.error('Hopefully that helps')
+
 def main(args):
 
     # for total runtime
@@ -124,18 +145,15 @@ def main(args):
         # Run the build: target will be pulled from env
         if not args.nobuild:
             try:
-                with open(os.path.join(temp_dir,'builderr'), 'w') as builderr:
+                with open(os.path.join(temp_dir,'build_stderr'), 'w') as build_stderr:
                     target_start = datetime.now()
                     subprocess.check_call([os.path.join(
                             HELPER_DIR, 'build.sh')],
-                            stdout=builderr, stderr=subprocess.STDOUT)
+                            stdout=build_stderr, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 logging.error('Build returned %d for %s' % (e.returncode, target))
-                logging.error('Dumping error...')
-                with open(os.path.join(temp_dir,'builderr'), 'r') as builderr:
-                    for line in builderr.read().split('\n'):
-                        logging.error(line)
-                logging.error('Hopefully that helps')
+                handle_build_errors(os.path.join(temp_dir,'build_stderr'))
+                continue
             else:
                 logging.info('Built %s in %s' %
                         (target, pretty.time(datetime.now() - target_start)))
