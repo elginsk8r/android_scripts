@@ -124,12 +124,18 @@ def main(args):
         # Run the build: target will be pulled from env
         if not args.nobuild:
             try:
-                with open(os.devnull, 'w') as shadup:
+                with open(os.path.join(temp_dir,'builderr'), 'w') as builderr:
                     target_start = datetime.now()
-                    subprocess.check_call([os.path.join(HELPER_DIR, 'build.sh')],
-                            stdout=shadup, stderr=subprocess.STDOUT)
+                    subprocess.check_call([os.path.join(
+                            HELPER_DIR, 'build.sh')],
+                            stdout=builderr, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
                 logging.error('Build returned %d for %s' % (e.returncode, target))
+                logging.error('Dumping error...')
+                with open(os.path.join(temp_dir,'builderr'), 'r') as builderr:
+                    for line in builderr.read().split('\n'):
+                        logging.error(line)
+                logging.error('Hopefully that helps')
             else:
                 logging.info('Built %s in %s' %
                         (target, pretty.time(datetime.now() - target_start)))
