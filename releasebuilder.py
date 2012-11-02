@@ -12,12 +12,11 @@ import Queue
 
 # local
 from drewis import rsync, pretty
-
-VERSION = '0.1'
+from drewis.__version__ import __version__
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
-parser.add_argument('--version', action='version', version='%(prog)s ' + VERSION)
+parser.add_argument('--version', action='version', version='%(prog)s ' + __version__)
 parser.add_argument('target', help="Device(s) to build",
                     nargs='+')
 parser.add_argument('--source', help="Path to android tree",
