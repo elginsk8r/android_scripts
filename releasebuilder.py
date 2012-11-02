@@ -28,6 +28,8 @@ parser.add_argument('--user', help="Username for upload host")
 parser.add_argument('--mirror', help="Path for upload mirroring")
 parser.add_argument('--nobuild', help=argparse.SUPPRESS,
                     action="store_true")
+parser.add_argument('-q', '--quiet', help="Suppress all output",
+                    action="store_true")
 args = parser.parse_args()
 
 # static vars
@@ -61,6 +63,8 @@ def handle_build_errors(error_file):
         ('JAVA:', ('grep', '-B 20', '-e errors$')),
         ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
     with open(error_file) as f:
+        if not args.quiet:
+            print 'Dumping errors...'
         logging.error('Dumping errors...')
         for grepcmd in grepcmds:
             try:
@@ -69,13 +73,23 @@ def handle_build_errors(error_file):
                 pass
             else:
                 if errors:
+                    if not args.quiet:
+                        print grepcmd[0]
                     logging.error(grepcmd[0])
                     for line in errors.split('\n'):
+                        if not args.quiet:
+                            print line
                         logging.error(line)
             f.seek(0)
+        if not args.quiet:
+            print 'Hopefully that helps'
         logging.error('Hopefully that helps')
 
 def main(args):
+
+    # Info
+    if not args.quiet:
+        print 'Logging to %s' % scriptlog
 
     # for total runtime
     script_start = datetime.now()
@@ -151,10 +165,15 @@ def main(args):
                             HELPER_DIR, 'build.sh')],
                             stdout=build_stderr, stderr=subprocess.STDOUT)
             except subprocess.CalledProcessError as e:
+                if not args.quiet:
+                    print 'Build returned %d for %s' % (e.returncode, target)
                 logging.error('Build returned %d for %s' % (e.returncode, target))
                 handle_build_errors(os.path.join(temp_dir,'build_stderr'))
                 continue
             else:
+                if not args.quiet:
+                    print('Built %s in %s' %
+                            (target, pretty.time(datetime.now() - target_start)))
                 logging.info('Built %s in %s' %
                         (target, pretty.time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
@@ -174,6 +193,9 @@ def main(args):
                             'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
                             codename),os.path.join(upload_path, codename))])
                 except subprocess.CalledProcessError as e:
+                    if not args.quiet:
+                        print('ssh returned %d while making directories' %
+                                (e.returncode))
                     logging.error('ssh returned %d while making directories' %
                             (e.returncode))
 
@@ -189,11 +211,18 @@ def main(args):
                     m_q.put((os.path.join(temp_dir, z),
                             os.path.join(mirror_path, codename)))
             else:
+                if not args.quiet:
+                    print 'Failed to get codename for %s' % (target)
                 logging.error('Failed to get codename for %s' % (target))
         else:
+            if not args.quiet:
+                print 'No zips found for %s' % (target)
             logging.warning('No zips found for %s' % target)
 
     # write total buildtime
+    if not args.quiet:
+        print('Built all targets in %s' %
+                (pretty.time(datetime.now() - build_start)))
     logging.info('Built all targets in %s' %
             (pretty.time(datetime.now() - build_start)))
 
@@ -204,6 +233,9 @@ def main(args):
     # cleanup
     shutil.rmtree(temp_dir)
 
+    if not args.quiet:
+        print('Total run time: %s' %
+                (pretty.time(datetime.now() - script_start)))
     logging.info('Total run time: %s' %
             (pretty.time(datetime.now() - script_start)))
 
