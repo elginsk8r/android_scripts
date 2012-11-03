@@ -3,6 +3,7 @@
 
 import argparse
 from datetime import datetime
+import json
 import logging
 import os
 import shutil
@@ -11,7 +12,7 @@ import tempfile
 import Queue
 
 # local
-from drewis import html, rsync, pretty
+from drewis import html, rsync, pretty, md5sum
 from drewis.__version__ import __version__
 
 # handle commandline args
@@ -173,6 +174,9 @@ def main(args):
     # keep track of builds
     build_start = datetime.now()
 
+    # for json manifest
+    md5s = []
+
     # build each target
     for target in args.target:
         os.putenv('EV_BUILD_TARGET', target)
@@ -200,6 +204,8 @@ def main(args):
                     zips.append(f)
         if zips:
             for z in zips:
+                md5s.append({ 'filename' : z,
+                        'md5sum' : md5sum.get(os.path.join(target_out_dir, z)) })
                 shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
                 upq.put(os.path.join(temp_dir, z))
                 m_q.put(os.path.join(temp_dir, z))
@@ -209,6 +215,13 @@ def main(args):
     # write total buildtime
     logging.info('Built all targets in %s' %
             (pretty.time(datetime.now() - build_start)))
+
+    # write manifest for md5sums
+    if md5s:
+        with open(os.path.join(temp_dir,'md5sums.json'),'w') as f:
+            json.dump(md5s, f, indent=2)
+        upq.put(os.path.join(temp_dir,'md5sums.json'))
+        m_q.put(os.path.join(temp_dir,'md5sums.json'))
 
     # wait for builds to finish uploading/mirroring
     m_q.join()
