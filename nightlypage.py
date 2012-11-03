@@ -11,7 +11,7 @@ from drewis import html,analytics
 script, base_path = argv
 base_url = 'n'
 page_title = 'Evervolv Nightlies'
-json_file = 'md5sums.json'
+json_file = 'info.json'
 css = '''
 body {
     font-family:"Lucida Console", Monaco, monospace;
@@ -90,7 +90,8 @@ for d in sorted(os.listdir(base_path)):
         subdir_files = sorted(os.listdir(subdir))
         if json_file in subdir_files:
             with open(os.path.join(subdir,json_file), 'r') as f:
-                z = [ (i['filename'],i['md5sum']) for i in sorted(json.load(f)) ]
+                z = sorted([ (i[j]['zip'],i[j]['md5sum']) for i in
+                        json.load(f)['build']['devices'] for j in i.keys() ])
             z += [(f, None) for f in subdir_files
                     if f.endswith('.html')]
         else:
