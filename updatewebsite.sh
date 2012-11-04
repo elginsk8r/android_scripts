@@ -3,7 +3,7 @@
 
 # Run from website root directory
 
-base_dir=/home/drew/uploads
+base_dir=~/uploads
 release_dir=mirror
 nightly_dir=cron
 
