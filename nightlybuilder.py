@@ -137,16 +137,16 @@ def main(args):
             os.mkdir(changelog_dir)
         # changelog
         changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.log')
-        # export for sync
-        os.putenv('EV_CHANGELOG', changelog)
         # sync the tree
         try:
-            subprocess.check_call([os.path.join(HELPER_DIR, 'sync.sh')],
-                    shell=True)
+            with open(changelog,'w') as cl:
+                subprocess.check_call([os.path.join(HELPER_DIR, 'sync.sh')],
+                        stdout=cl)
         except subprocess.CalledProcessError as e:
             logging.error('sync returned %d' % (e.returncode))
         # create the html changelog
         if os.path.exists(changelog):
+            logging.info('Created changelog for %s' % DATE)
             html_changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.html')
             cl = html.Create()
             cl.title('Changelog')
