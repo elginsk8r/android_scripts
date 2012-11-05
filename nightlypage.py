@@ -101,8 +101,7 @@ for d in sorted(os.listdir(base_path)):
             staging.append((d,z))
 
 final = []
-for item in staging:
-    parent, children = item
+for parent, children in staging:
     # We only want to track clicks for zip files
     # and the html wont have md5sums
     # so slit into two lists
@@ -112,14 +111,12 @@ for item in staging:
             temp_zips.append(f)
         else:
             temp_other.append(f)
-    for f in temp_zips:
-        z, m = f
+    for z, m in temp_zips:
         links = html.make_analytic_links([z],
                 '%s/%s' % (base_url, parent),
                 'NightlyClick')
         temp.append('%s MD5:%s' % (links[0], m))
-    for f in temp_other:
-        o, m = f
+    for o, m in temp_other:
         links = html.make_links([o],
                 '%s/%s' % (base_url, parent))
         temp.append(links[0])
