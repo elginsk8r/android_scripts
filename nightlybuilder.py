@@ -175,7 +175,7 @@ def main(args):
     build_start = datetime.now()
 
     # for json manifest
-    built_devices = []
+    json_info = []
 
     # build each target
     for target in args.target:
@@ -204,8 +204,16 @@ def main(args):
                     zips.append(f)
         if zips:
             for z in zips:
-                built_devices.append({ target : { 'zip' : z,
-                        'md5sum' : md5sum.get(os.path.join(target_out_dir, z)) }})
+                json_info.append({
+                        'date': DATE,
+                        'device': target,
+                        'count': 0,
+                        'message': 'Nightly build for %s' % target,
+                        'md5sum': md5sum.get(os.path.join(target_out_dir, z)),
+                        'name': z,
+                        'size': os.path.getsize(os.path.join(target_out_dir, z)),
+                        'type': 'nightly',
+                })
                 shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
                 upq.put(os.path.join(temp_dir, z))
                 m_q.put(os.path.join(temp_dir, z))
@@ -217,10 +225,9 @@ def main(args):
             (pretty.time(datetime.now() - build_start)))
 
     # write manifest
-    if built_devices:
-        info_data = {'build': { 'type': 'nightly', 'date': DATE, 'devices' : built_devices }}
+    if json_info:
         with open(os.path.join(temp_dir,'info.json'),'w') as f:
-            json.dump(info_data, f, indent=2)
+            json.dump(json_info, f, indent=2)
         upq.put(os.path.join(temp_dir,'info.json'))
         m_q.put(os.path.join(temp_dir,'info.json'))
 
