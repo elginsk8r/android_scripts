@@ -261,6 +261,12 @@ def main(args):
         m_q.join()
         upq.join()
 
+    # run postupload script
+    try:
+        subprocess.check_call(['ssh', '%s@%s' % (droid_user,droid_host), 'test -e ~/website_static/updatewebsite.sh && test -d ~/uploads/htdocs && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
+    except subprocess.CalledProcessError as e:
+        logging.error('ssh returned %d while updating website' % (e.returncode))
+
     # cd previous working dir
     os.chdir(previous_working_dir)
 
