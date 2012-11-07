@@ -263,7 +263,7 @@ def main(args):
 
     # run postupload script
     try:
-        subprocess.check_call(['ssh', '%s@%s' % (droid_user,droid_host), 'test -e ~/website_static/updatewebsite.sh && test -d ~/uploads/htdocs && cd ~/uploads/htdocs && ~/android_scripts/updatewebsite.sh'])
+        subprocess.check_call(['ssh', '%s@%s' % (droid_user,droid_host), 'test -e ~/website_static/updatewebsite.sh && test -d ~/uploads/htdocs && cd ~/uploads/htdocs && ~/website_static/updatewebsite.sh'])
     except subprocess.CalledProcessError as e:
         logging.error('ssh returned %d while updating website' % (e.returncode))
 
