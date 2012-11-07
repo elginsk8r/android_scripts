@@ -10,7 +10,7 @@ get_changelog () {
     popd >/dev/null 2>&1
     test "$previous" = "(no branch)" && return 1
     echo "${previous}..${current}"
-    repo sync -fd -j12 >/dev/null 2>&1 || { echo "Sync failed"; return 1 }
+    repo sync -fd -j12 >/dev/null 2>&1 || { echo "Sync failed"; return 1; }
     repo start ${current} --all >/dev/null 2>&1
     repo forall -pvc git log --oneline --no-merges ${previous}..${current} 2>/dev/null
     return 0
