@@ -198,8 +198,11 @@ def main(args):
                     logging.error('ssh returned %d while making directories' %
                             (e.returncode))
 
-                if not os.path.isdir(os.path.join(mirror_path, codename)):
-                    os.makedirs(os.path.join(mirror_path, codename))
+                try:
+                    if not os.path.isdir(os.path.join(mirror_path, codename)):
+                        os.makedirs(os.path.join(mirror_path, codename))
+                except OSError as e:
+                    logging.error('failed to make mirror dir: %s' % (e))
 
                 for z in zips:
                     shutil.copy(os.path.join(target_out_dir, z),

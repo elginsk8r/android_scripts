@@ -107,8 +107,11 @@ def main(args):
     except subprocess.CalledProcessError as e:
         logging.error('ssh returned %d while making directories' % (e.returncode))
 
-    if not os.path.isdir(mirror_path):
-        os.makedirs(mirror_path)
+    try:
+        if not os.path.isdir(mirror_path):
+            os.makedirs(mirror_path)
+    except OSError as e:
+        logging.error('failed to make mirror dir: %s' % (e))
 
     # upload thread
     upq = Queue.Queue()
