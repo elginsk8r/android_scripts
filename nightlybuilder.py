@@ -106,6 +106,7 @@ def main(args):
                 'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
     except subprocess.CalledProcessError as e:
         logging.error('ssh returned %d while making directories' % (e.returncode))
+        exit()
 
     try:
         if not os.path.isdir(mirror_path):
