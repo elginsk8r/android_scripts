@@ -8,7 +8,7 @@ get_changelog () {
     previous=$(git status -bsz)
     previous=${previous#\#\#\ } # Too hacky?
     popd >/dev/null 2>&1
-    test "$previous" = "(no branch)" && return 1
+    test "$previous" = "HEAD (no branch)" && return 1
     echo "${previous}..${current}"
     repo sync -fd -j12 >/dev/null 2>&1 || { echo "Sync failed"; return 1; }
     repo start ${current} --all >/dev/null 2>&1
