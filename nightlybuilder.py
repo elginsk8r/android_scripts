@@ -147,7 +147,9 @@ def main(args):
                 subprocess.check_call([os.path.join(HELPER_DIR, 'sync.sh')],
                         stdout=cl)
         except subprocess.CalledProcessError as e:
-            logging.error('sync returned %d' % (e.returncode))
+            logging.error('Sync returned %d' % (e.returncode))
+            logging.error('Skipping the build. You need to fix the repo')
+            args.nobuild = True
         # create the html changelog
         if os.path.exists(changelog):
             logging.info('Created changelog for %s' % DATE)
