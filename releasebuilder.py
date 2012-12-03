@@ -128,7 +128,7 @@ def main(args):
     upload_path = os.path.join('~', 'uploads')
 
     # mirror path
-    mirror_path = local_mirror
+    mirror_path = os.path.join(local_mirror, 'Releases')
 
     # upload thread
     upq = Queue.Queue()

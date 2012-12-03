@@ -98,7 +98,7 @@ def main(args):
     upload_path = os.path.join('~', 'uploads', 'cron', DATE)
 
     # mirror path
-    mirror_path = os.path.join(local_mirror, 'cron', DATE)
+    mirror_path = os.path.join(local_mirror, 'Nightlies', DATE)
 
     # make the remote directories
     try:
