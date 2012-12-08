@@ -18,8 +18,6 @@ for FILE in $(cat proprietary-blobs.txt | grep -v ^# | grep -v ^$); do
     adb $SERIAL pull $FILE $BASE/$(basename $FILE)
 done
 
-chmod 755 $BASE/*.so # 755 the libs
-
 (cat << EOF) > ../../../$OUTDIR/device-vendor-blobs.mk
 # Copyright (C) 2012 The Android Open Source Project
 #
