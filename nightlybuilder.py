@@ -150,6 +150,9 @@ def main(args):
             logging.error('Sync returned %d' % (e.returncode))
             logging.error('Skipping the build. You need to fix the repo')
             args.nobuild = True
+            # Remove out so we dont upload yesterdays build
+            if os.path.isdir('out'):
+                shutil.rmtree('out')
         # create the html changelog
         if os.path.exists(changelog):
             logging.info('Created changelog for %s' % DATE)
