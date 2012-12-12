@@ -125,7 +125,7 @@ def main(args):
     os.chdir(args.source)
 
     # upload path
-    upload_path = os.path.join('~', 'uploads')
+    upload_path = os.path.join('~', 'uploads','mirror')
 
     # mirror path
     mirror_path = os.path.join(local_mirror, 'Releases')
