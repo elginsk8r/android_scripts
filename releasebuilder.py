@@ -47,7 +47,7 @@ def get_codename(target):
     codename = None
     for p,d,f in os.walk('device'):
         for dirs in d:
-            if target in dirs:
+            if target == dirs:
                 with open(os.path.join(p,dirs,'ev.mk')) as f:
                     contents = f.read().split('\n')
                     for line in contents:
