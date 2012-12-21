@@ -36,7 +36,7 @@ fi
 sudo mount -t ext4 -o loop $TEMPIMG $TEMPDIR
 
 for FILE in $(cat $BLOBFILE | grep -v ^# | grep -v ^$); do
-    cp -v ${TEMPDIR}${FILE#/system} $BASE/$(basename $FILE)
+    cp ${TEMPDIR}${FILE#/system} $BASE/$(basename $FILE)
 done
 
 sudo umount $TEMPDIR
