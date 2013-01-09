@@ -24,7 +24,8 @@ parser.add_argument('--source', help="Path to android tree",
                     default=os.getcwd())
 parser.add_argument('--host', help="Hostname for upload")
 parser.add_argument('--user', help="Username for upload host")
-parser.add_argument('--mirror', help="Path for upload mirroring")
+parser.add_argument('--remotedir', help="Remote path for uploads")
+parser.add_argument('--localdir', help="Local path for uploads")
 parser.add_argument('--nosync', help=argparse.SUPPRESS,
                     action="store_true")
 parser.add_argument('--nobuild', help=argparse.SUPPRESS,
@@ -78,16 +79,20 @@ def main(args):
         droid_host = os.getenv('DROID_HOST')
     else:
         droid_host = args.host
-    if not args.mirror:
-        local_mirror = os.getenv('DROID_MIRROR')
-        if not local_mirror:
-            local_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    if not args.remotedir:
+        droid_path = os.getenv('DROID_PATH')
     else:
-        local_mirror = args.mirror
+        droid_path = args.remotedir
+    if not args.localdir:
+        droid_mirror = os.getenv('DROID_MIRROR')
+        if not droid_mirror:
+            droid_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    else:
+        droid_mirror = args.localdir
 
     # these vars are mandatory
-    if not droid_host or not droid_user or not local_mirror:
-        print 'DROID_HOST or DROID_USER or DROID_LOCAL_MIRROR not set... Bailing'
+    if not droid_host or not droid_user or not droid_mirror or not droid_path:
+        print 'DROID_HOST or DROID_USER or DROID_PATH or DROID_MIRROR not set... Bailing'
         exit()
 
     # cd working dir
@@ -95,10 +100,10 @@ def main(args):
     os.chdir(args.source)
 
     # upload path
-    upload_path = os.path.join('~', 'uploads', 'cron', DATE)
+    upload_path = os.path.join(droid_path, DATE)
 
     # mirror path
-    mirror_path = os.path.join(local_mirror, 'Nightlies', DATE)
+    mirror_path = os.path.join(droid_mirror, DATE)
 
     # make the remote directories
     try:
