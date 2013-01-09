@@ -10,7 +10,7 @@ run_build () {
     source build/envsetup.sh >/dev/null 2>&1 || return 1
     breakfast $target        >/dev/null 2>&1 || return 1
     make clobber             >/dev/null 2>&1 || return 1
-    make -j $threads $args   >/dev/null      || return 1
+    make -j$threads $args    >/dev/null      || return 1
     return 0
 }
 
