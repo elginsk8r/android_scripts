@@ -24,7 +24,8 @@ parser.add_argument('--source', help="Path to android tree",
 parser.add_argument('--host', help="Hostname for upload")
 parser.add_argument('--port', help="Listen port for host sshd")
 parser.add_argument('--user', help="Username for upload host")
-parser.add_argument('--mirror', help="Path for upload mirroring")
+parser.add_argument('--remotedir', help="Remote path for uploads")
+parser.add_argument('--localdir', help="Local path for uploads")
 parser.add_argument('--nobuild', help=argparse.SUPPRESS,
                     action="store_true")
 parser.add_argument('-q', '--quiet', help="Suppress all output",
@@ -102,12 +103,16 @@ def main(args):
         droid_host = os.getenv('DROID_HOST')
     else:
         droid_host = args.host
-    if not args.mirror:
-        local_mirror = os.getenv('DROID_MIRROR')
-        if not local_mirror:
-            local_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    if not args.remotedir:
+        droid_path = os.getenv('DROID_PATH')
     else:
-        local_mirror = args.mirror
+        droid_path= args.remotedir
+    if not args.localdir:
+        droid_mirror = os.getenv('DROID_MIRROR')
+        if not droid_mirror:
+            droid_mirror = os.getenv('DROID_LOCAL_MIRROR')
+    else:
+        droid_mirror = args.localdir
     if not args.port:
         droid_host_port = os.getenv('DROID_HOST_PORT')
         if not droid_host_port:
@@ -116,8 +121,8 @@ def main(args):
         droid_host_port = args.port
 
     # these vars are mandatory
-    if not droid_host or not droid_user or not local_mirror:
-        print 'DROID_HOST or DROID_USER or DROID_LOCAL_MIRROR not set... Bailing'
+    if not droid_host or not droid_user or not droid_path or not droid_mirror:
+        print 'DROID_HOST or DROID_USER or DROID_PATH or DROID_MIRROR not set... Bailing'
         exit()
 
     # cd working dir
@@ -125,10 +130,10 @@ def main(args):
     os.chdir(args.source)
 
     # upload path
-    upload_path = os.path.join('~', 'uploads','mirror')
+    upload_path = droid_path
 
     # mirror path
-    mirror_path = os.path.join(local_mirror, 'Releases')
+    mirror_path = droid_mirror
 
     # upload thread
     upq = Queue.Queue()
