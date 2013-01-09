@@ -171,7 +171,7 @@ def main(args):
             cl.write(html_changelog)
             # add changelog to rsync queues
             upq.put(html_changelog)
-            m_q.put(changelog)
+            m_q.put(html_changelog)
     else:
         logging.info('Skipped sync')
 
@@ -270,7 +270,7 @@ def main(args):
         sl.write(html_scriptlog)
         # add log to rsync queues
         upq.put(html_scriptlog)
-        m_q.put(scriptlog)
+        m_q.put(html_scriptlog)
         # wait for complete
         m_q.join()
         upq.join()
