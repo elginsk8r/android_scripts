@@ -70,6 +70,8 @@ def main(args):
     # for total runtime
     script_start = datetime.now()
 
+    logging.info(script_start)
+
     # set vars for uploading/mirroring
     if not args.user:
         droid_user = os.getenv('DROID_USER')
