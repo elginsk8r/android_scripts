@@ -90,50 +90,68 @@ def main(args):
     else:
         droid_mirror = args.localdir
 
-    # these vars are mandatory
-    if not droid_host or not droid_user or not droid_mirror or not droid_path:
-        print 'DROID_HOST or DROID_USER or DROID_PATH or DROID_MIRROR not set... Bailing'
-        exit()
+    # we must put the builds somewhere
+    if not droid_mirror:
+        mirroring = False
+        if droid_host and droid_user and droid_path:
+            uploading = True
+        else:
+            logging.error('DROID_MIRROR not set')
+            logging.error('DROID_HOST or DROID_USER or DROID_PATH not set')
+            logging.error('no where put builds. BAILING!!')
+            exit()
+    else:
+        mirroring = True
+        if droid_host and droid_user and droid_path:
+            uploading = True
+        else:
+            uploading = False
 
     # cd working dir
     previous_working_dir = os.getcwd()
     os.chdir(args.source)
 
-    # upload path
-    upload_path = os.path.join(droid_path, DATE)
-
-    # mirror path
-    mirror_path = os.path.join(droid_mirror, DATE)
-
     # make the remote directories
-    try:
-        subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host),
-                'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
-    except subprocess.CalledProcessError as e:
-        logging.error('ssh returned %d while making directories' % (e.returncode))
-        exit()
+    if uploading:
+        upload_path = os.path.join(droid_path, DATE)
+        try:
+            subprocess.check_call(['ssh', '%s@%s' % (droid_user, droid_host),
+                    'test -d %s || mkdir -p %s' % (upload_path,upload_path)])
+        except subprocess.CalledProcessError as e:
+            logging.error('ssh returned %d while making directories' %
+                    (e.returncode))
+            uploading = False
+            if not mirroring:
+                logging.error('no where to put builds. BAILING!!')
+                exit()
+        else:
+            # upload thread
+            upq = Queue.Queue()
+            t1 = rsync.rsyncThread(upq,
+                    '%s@%s:%s' % (droid_user, droid_host, upload_path),
+                    message='Uploaded')
+            t1.setDaemon(True)
+            t1.start()
 
-    try:
-        if not os.path.isdir(mirror_path):
-            os.makedirs(mirror_path)
-    except OSError as e:
-        logging.error('failed to make mirror dir: %s' % (e))
-
-    # upload thread
-    upq = Queue.Queue()
-    t1 = rsync.rsyncThread(upq,
-            '%s@%s:%s' % (droid_user, droid_host, upload_path),
-            message='Uploaded')
-    t1.setDaemon(True)
-    t1.start()
-
-    # mirror thread
-    m_q = Queue.Queue()
-    t2 = rsync.rsyncThread(m_q,
-            mirror_path,
-            message='Mirrored')
-    t2.setDaemon(True)
-    t2.start()
+    if mirroring:
+        mirror_path = os.path.join(droid_mirror, DATE)
+        try:
+            if not os.path.isdir(mirror_path):
+                os.makedirs(mirror_path)
+        except OSError as e:
+            logging.error('failed to make mirror dir: %s' % (e))
+            mirroring = False
+            if not uploading:
+                logging.error('no where to put builds. BAILING!!')
+                exit()
+        else:
+            # mirror thread
+            m_q = Queue.Queue()
+            t2 = rsync.rsyncThread(m_q,
+                    mirror_path,
+                    message='Copied')
+            t2.setDaemon(True)
+            t2.start()
 
     #
     # Syncing
@@ -170,8 +188,10 @@ def main(args):
             cl.body(html.add_line_breaks(clbody[1:]))
             cl.write(html_changelog)
             # add changelog to rsync queues
-            upq.put(html_changelog)
-            m_q.put(html_changelog)
+            if uploading:
+                upq.put(html_changelog)
+            if mirroring:
+                m_q.put(html_changelog)
     else:
         logging.info('Skipped sync')
 
@@ -229,8 +249,10 @@ def main(args):
                         'type': 'nightly',
                 })
                 shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
-                upq.put(os.path.join(temp_dir, z))
-                m_q.put(os.path.join(temp_dir, z))
+                if uploading:
+                    upq.put(os.path.join(temp_dir, z))
+                if mirroring:
+                    m_q.put(os.path.join(temp_dir, z))
         else:
             logging.warning('No zips found for %s' % target)
 
@@ -242,12 +264,16 @@ def main(args):
     if json_info:
         with open(os.path.join(temp_dir,'info.json'),'w') as f:
             json.dump(json_info, f, indent=2)
-        upq.put(os.path.join(temp_dir,'info.json'))
-        m_q.put(os.path.join(temp_dir,'info.json'))
+        if uploading:
+            upq.put(os.path.join(temp_dir,'info.json'))
+        if mirroring:
+            m_q.put(os.path.join(temp_dir,'info.json'))
 
     # wait for builds to finish uploading/mirroring
-    m_q.join()
-    upq.join()
+    if mirroring:
+        m_q.join()
+    if uploading:
+        upq.join()
 
     # cleanup
     shutil.rmtree(temp_dir)
@@ -269,11 +295,12 @@ def main(args):
         sl.body(html.add_line_breaks(html.parse_file(scriptlog)))
         sl.write(html_scriptlog)
         # add log to rsync queues
-        upq.put(html_scriptlog)
-        m_q.put(html_scriptlog)
-        # wait for complete
-        m_q.join()
-        upq.join()
+        if uploading:
+            upq.put(html_scriptlog)
+            upq.join()
+        if mirroring:
+            m_q.put(html_scriptlog)
+            m_q.join()
 
     # cd previous working dir
     os.chdir(previous_working_dir)

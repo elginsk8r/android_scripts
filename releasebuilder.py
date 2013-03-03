@@ -120,32 +120,46 @@ def main(args):
     else:
         droid_host_port = args.port
 
-    # these vars are mandatory
-    if not droid_host or not droid_user or not droid_path or not droid_mirror:
-        print 'DROID_HOST or DROID_USER or DROID_PATH or DROID_MIRROR not set... Bailing'
-        exit()
+    # we must put the builds somewhere
+    if not droid_mirror:
+        mirroring = False
+        if droid_host and droid_user and droid_path:
+            uploading = True
+        else:
+            logging.error('DROID_MIRROR not set')
+            logging.error('DROID_HOST or DROID_USER or DROID_PATH not set')
+            logging.error('no where put builds. BAILING!!')
+            if not args.quiet:
+                print 'You must specify somewhere to put the builds. Exiting'
+            exit()
+    else:
+        mirroring = True
+        if droid_host and droid_user and droid_path:
+            uploading = True
+        else:
+            uploading = False
 
     # cd working dir
     previous_working_dir = os.getcwd()
     os.chdir(args.source)
 
-    # upload path
-    upload_path = droid_path
+    if uploading:
+        # upload path
+        upload_path = droid_path
+        # upload thread
+        upq = Queue.Queue()
+        t1 = rsync.rsyncThread(upq, port=droid_host_port, message='Uploaded')
+        t1.setDaemon(True)
+        t1.start()
 
-    # mirror path
-    mirror_path = droid_mirror
-
-    # upload thread
-    upq = Queue.Queue()
-    t1 = rsync.rsyncThread(upq, port=droid_host_port, message='Uploaded')
-    t1.setDaemon(True)
-    t1.start()
-
-    # mirror thread
-    m_q = Queue.Queue()
-    t2 = rsync.rsyncThread(m_q, message='Mirrored')
-    t2.setDaemon(True)
-    t2.start()
+    if mirroring:
+        # mirror path
+        mirror_path = droid_mirror
+        # mirror thread
+        m_q = Queue.Queue()
+        t2 = rsync.rsyncThread(m_q, message='Mirrored')
+        t2.setDaemon(True)
+        t2.start()
 
     #
     # Building
@@ -190,33 +204,37 @@ def main(args):
         if zips:
             codename = get_codename(target)
             if codename:
-                # make the remote directories
-                try:
-                    subprocess.check_call(['ssh', '-p%s' % (droid_host_port),
-                            '%s@%s' % (droid_user, droid_host),
-                            'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
-                            codename),os.path.join(upload_path, codename))])
-                except subprocess.CalledProcessError as e:
-                    if not args.quiet:
-                        print('ssh returned %d while making directories' %
+                if uploading:
+                    # make the remote directories
+                    try:
+                        subprocess.check_call(['ssh', '-p%s' % (droid_host_port),
+                                '%s@%s' % (droid_user, droid_host),
+                                'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
+                                codename),os.path.join(upload_path, codename))])
+                    except subprocess.CalledProcessError as e:
+                        if not args.quiet:
+                            print('ssh returned %d while making directories' %
+                                    (e.returncode))
+                        logging.error('ssh returned %d while making directories' %
                                 (e.returncode))
-                    logging.error('ssh returned %d while making directories' %
-                            (e.returncode))
 
-                try:
-                    if not os.path.isdir(os.path.join(mirror_path, codename)):
-                        os.makedirs(os.path.join(mirror_path, codename))
-                except OSError as e:
-                    logging.error('failed to make mirror dir: %s' % (e))
+                if mirroring:
+                    try:
+                        if not os.path.isdir(os.path.join(mirror_path, codename)):
+                            os.makedirs(os.path.join(mirror_path, codename))
+                    except OSError as e:
+                        logging.error('failed to make mirror dir: %s' % (e))
 
                 for z in zips:
                     shutil.copy(os.path.join(target_out_dir, z),
                             os.path.join(temp_dir, z))
-                    upq.put((os.path.join(temp_dir, z),
-                            '%s@%s:%s' % (droid_user, droid_host,
-                            os.path.join(upload_path, codename))))
-                    m_q.put((os.path.join(temp_dir, z),
-                            os.path.join(mirror_path, codename)))
+                    if uploading:
+                        upq.put((os.path.join(temp_dir, z),
+                                '%s@%s:%s' % (droid_user, droid_host,
+                                os.path.join(upload_path, codename))))
+                    if mirroring:
+                        m_q.put((os.path.join(temp_dir, z),
+                                os.path.join(mirror_path, codename)))
             else:
                 if not args.quiet:
                     print 'Failed to get codename for %s' % (target)
@@ -234,8 +252,10 @@ def main(args):
             (pretty.time(datetime.now() - build_start)))
 
     # wait for builds to finish uploading/mirroring
-    m_q.join()
-    upq.join()
+    if mirroring:
+        m_q.join()
+    if uploading:
+        upq.join()
 
     # cleanup
     shutil.rmtree(temp_dir)
