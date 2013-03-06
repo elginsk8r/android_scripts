@@ -8,7 +8,6 @@ import logging
 import os
 import shutil
 import subprocess
-import tempfile
 import Queue
 
 # local
@@ -205,7 +204,10 @@ def main(args):
     os.putenv('NIGHTLY_BUILD', 'true')
 
     # for zip storage
-    temp_dir = tempfile.mkdtemp()
+    if os.path.isdir('/dev/shm'):
+        temp_dir = '/dev/shm/tmp-nightlybuilder_zips'
+    else:
+        temp_dir = '/tmp/tmp-nightlybuilder_zips'
 
     # keep track of builds
     build_start = datetime.now()
