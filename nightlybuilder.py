@@ -208,6 +208,8 @@ def main(args):
         temp_dir = '/dev/shm/tmp-nightlybuilder_zips'
     else:
         temp_dir = '/tmp/tmp-nightlybuilder_zips'
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
 
     # keep track of builds
     build_start = datetime.now()
