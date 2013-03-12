@@ -268,12 +268,23 @@ def main(args):
 
     # write manifest
     if json_info:
+        json_info.sort(key=lambda d:d['device'])
         with open(os.path.join(temp_dir,'info.json'),'w') as f:
             json.dump(json_info, f, indent=2)
         if uploading:
             upq.put(os.path.join(temp_dir,'info.json'))
         if mirroring:
             m_q.put(os.path.join(temp_dir,'info.json'))
+        # for website
+        main_manifest = os.path.join(droid_mirror,'manifest.json')
+        if os.path.exists(main_manifest):
+            with open(main_manifest,'r') as f:
+                entries = json.load(f)
+            for e in json_info:
+                entries.append(e)
+            with open(main_manifest,'w') as f:
+                json.dump(entries,f,indent=2)
+
 
     # wait for builds to finish uploading/mirroring
     if mirroring:
