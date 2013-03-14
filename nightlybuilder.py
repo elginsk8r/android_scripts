@@ -112,9 +112,6 @@ def main(args):
     previous_working_dir = os.getcwd()
     os.chdir(args.source)
 
-    # we want group write
-    os.umask(002)
-
     # make the remote directories
     if uploading:
         upload_path = os.path.join(droid_path, DATE)
@@ -142,6 +139,7 @@ def main(args):
         try:
             if not os.path.isdir(mirror_path):
                 os.makedirs(mirror_path)
+                subprocess.call(['chmod','775','%s' % (mirror_path)])
         except OSError as e:
             logging.error('failed to make mirror dir: %s' % (e))
             mirroring = False
@@ -257,7 +255,7 @@ def main(args):
                         'size': os.path.getsize(os.path.join(target_out_dir, z)),
                         'type': 'nightly',
                 })
-                shutil.copy(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
+                shutil.copy2(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
                 if uploading:
                     upq.put(os.path.join(temp_dir, z))
                 if mirroring:
