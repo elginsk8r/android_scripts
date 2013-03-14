@@ -30,15 +30,12 @@ class rsyncThread(threading.Thread):
 
 def rsync(local_file, remote_path, port=None, message='Synced'):
     try:
-        with open(os.devnull, 'w') as shadup:
-            start = datetime.datetime.now()
-            if port:
-                subprocess.check_call(['rsync', '-e ssh -p%s' % (port),
-                        '-P', local_file, remote_path],
-                        stdout=shadup, stderr=subprocess.STDOUT)
-            else:
-                subprocess.check_call(['rsync', '-P', local_file, remote_path],
-                        stdout=shadup, stderr=subprocess.STDOUT)
+        start = datetime.datetime.now()
+        if port:
+            subprocess.check_call(['rsync', '-e ssh -p%s' % (port),
+                    '-pq', local_file, remote_path])
+        else:
+            subprocess.check_call(['rsync', '-pq', local_file, remote_path])
     except subprocess.CalledProcessError as e:
         logging.error('rsync returned %d for %s'
                     % (e.returncode, os.path.basename(local_file)))
