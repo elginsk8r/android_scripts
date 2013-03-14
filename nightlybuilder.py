@@ -112,6 +112,9 @@ def main(args):
     previous_working_dir = os.getcwd()
     os.chdir(args.source)
 
+    # we want group write
+    os.umask(002)
+
     # make the remote directories
     if uploading:
         upload_path = os.path.join(droid_path, DATE)
