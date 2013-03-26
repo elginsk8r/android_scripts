@@ -44,27 +44,6 @@ scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
 logging.basicConfig(filename=scriptlog, level=logging.INFO,
         format='%(levelname)s:%(message)s')
 
-def handle_build_errors(error_file):
-    grepcmds = [
-        ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
-        ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
-        ('JAVA:', ('grep', '-B 20', '-e errors$')),
-        ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
-    with open(error_file) as f:
-        logging.error('Dumping errors...')
-        for grepcmd in grepcmds:
-            try:
-                errors = subprocess.check_output(grepcmd[1], stdin=f)
-            except subprocess.CalledProcessError as e:
-                pass
-            else:
-                if errors:
-                    logging.error(grepcmd[0])
-                    for line in errors.split('\n'):
-                        logging.error(line)
-            f.seek(0)
-        logging.error('Hopefully that helps')
-
 def main(args):
 
     # for total runtime

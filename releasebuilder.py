@@ -57,35 +57,6 @@ def get_codename(target):
                             codename = line.split(' ')[2]
     return codename
 
-def handle_build_errors(error_file):
-    grepcmds = [
-        ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
-        ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
-        ('JAVA:', ('grep', '-B 20', '-e errors$')),
-        ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
-    with open(error_file) as f:
-        if not args.quiet:
-            print 'Dumping errors...'
-        logging.error('Dumping errors...')
-        for grepcmd in grepcmds:
-            try:
-                errors = subprocess.check_output(grepcmd[1], stdin=f)
-            except subprocess.CalledProcessError as e:
-                pass
-            else:
-                if errors:
-                    if not args.quiet:
-                        print grepcmd[0]
-                    logging.error(grepcmd[0])
-                    for line in errors.split('\n'):
-                        if not args.quiet:
-                            print line
-                        logging.error(line)
-            f.seek(0)
-        if not args.quiet:
-            print 'Hopefully that helps'
-        logging.error('Hopefully that helps')
-
 def main(args):
 
     # Info
@@ -187,7 +158,11 @@ def main(args):
                 if not args.quiet:
                     print 'Build returned %d for %s' % (e.returncode, target)
                 logging.error('Build returned %d for %s' % (e.returncode, target))
-                handle_build_errors(os.path.join(temp_dir,'build_stderr'))
+                if not args.quiet:
+                    handle_build_errors(os.path.join(temp_dir,'build_stderr'),
+                            verbose=True)
+                else:
+                    handle_build_errors(os.path.join(temp_dir,'build_stderr'))
                 continue
             else:
                 if not args.quiet:

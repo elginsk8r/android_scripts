@@ -3,9 +3,12 @@
 __all__ = [
     "md5sum",
     "pretty_time",
+    "handle_build_errors",
 ]
 
 import hashlib
+import logging
+import subprocess
 
 def md5sum(filename):
     '''take string filename, returns hex md5sum as string'''
@@ -20,3 +23,37 @@ def pretty_time(t):
     h, r = divmod(t.seconds, 3600)
     m, s = divmod(r, 60)
     return '%sh %sm %ss' % (h, m, s)
+
+def handle_build_errors(error_file,verbose=False):
+    grepcmds = [
+        ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
+        ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
+        ('JAVA:', ('grep', '-B 20', '-e errors$')),
+        ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
+    try:
+        with open(error_file) as f:
+            if verbose:
+                print 'Dumping errors...'
+            logging.error('Dumping errors...')
+            for grepcmd in grepcmds:
+                try:
+                    errors = subprocess.check_output(grepcmd[1], stdin=f)
+                except subprocess.CalledProcessError as e:
+                    pass
+                else:
+                    if errors:
+                        if verbose:
+                            print grepcmd[0]
+                        logging.error(grepcmd[0])
+                        for line in errors.split('\n'):
+                            if verbose:
+                                print line
+                            logging.error(line)
+                f.seek(0)
+            if verbose:
+                print 'Hopefully that helps'
+            logging.error('Hopefully that helps')
+    except IOError as e:
+        if verbose:
+            print 'Error opening %s: %s' % (error_file,e)
+        logging.error('Error opening %s: %s' % (error_file,e))
