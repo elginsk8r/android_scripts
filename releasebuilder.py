@@ -11,8 +11,9 @@ import tempfile
 import Queue
 
 # local
-from drewis import rsync, pretty
-from drewis.__version__ import __version__
+from drewis import __version__
+from drewis import html,rsync
+from drewis.utils import *
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -191,9 +192,9 @@ def main(args):
             else:
                 if not args.quiet:
                     print('Built %s in %s' %
-                            (target, pretty.time(datetime.now() - target_start)))
+                            (target, pretty_time(datetime.now() - target_start)))
                 logging.info('Built %s in %s' %
-                        (target, pretty.time(datetime.now() - target_start)))
+                        (target, pretty_time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
         zips = []
         target_out_dir = os.path.join('out', 'target', 'product', target)
@@ -247,9 +248,9 @@ def main(args):
     # write total buildtime
     if not args.quiet:
         print('Built all targets in %s' %
-                (pretty.time(datetime.now() - build_start)))
+                (pretty_time(datetime.now() - build_start)))
     logging.info('Built all targets in %s' %
-            (pretty.time(datetime.now() - build_start)))
+            (pretty_time(datetime.now() - build_start)))
 
     # wait for builds to finish uploading/mirroring
     if mirroring:
@@ -262,9 +263,9 @@ def main(args):
 
     if not args.quiet:
         print('Total run time: %s' %
-                (pretty.time(datetime.now() - script_start)))
+                (pretty_time(datetime.now() - script_start)))
     logging.info('Total run time: %s' %
-            (pretty.time(datetime.now() - script_start)))
+            (pretty_time(datetime.now() - script_start)))
 
     # cd previous working dir
     os.chdir(previous_working_dir)

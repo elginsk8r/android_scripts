@@ -11,8 +11,9 @@ import subprocess
 import Queue
 
 # local
-from drewis import html, rsync, pretty, md5sum
-from drewis.__version__ import __version__
+from drewis import __version__
+from drewis import html,rsync
+from drewis.utils import *
 
 # handle commandline args
 parser = argparse.ArgumentParser(description="Drew's builder script")
@@ -238,7 +239,7 @@ def main(args):
                 continue
             else:
                 logging.info('Built %s in %s' %
-                        (target, pretty.time(datetime.now() - target_start)))
+                        (target, pretty_time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
         zips = []
         target_out_dir = os.path.join('out', 'target', 'product', target)
@@ -253,7 +254,7 @@ def main(args):
                         'device': target,
                         'count': 0,
                         'message': 'Nightly build for %s' % target,
-                        'md5sum': md5sum.get(os.path.join(target_out_dir, z)),
+                        'md5sum': md5sum(os.path.join(target_out_dir, z)),
                         'name': z,
                         'size': os.path.getsize(os.path.join(target_out_dir, z)),
                         'type': 'nightly',
@@ -268,7 +269,7 @@ def main(args):
 
     # write total buildtime
     logging.info('Built all targets in %s' %
-            (pretty.time(datetime.now() - build_start)))
+            (pretty_time(datetime.now() - build_start)))
 
     # write manifest
     if json_info:
@@ -314,7 +315,7 @@ def main(args):
     shutil.rmtree(temp_dir)
 
     logging.info('Total run time: %s' %
-            (pretty.time(datetime.now() - script_start)))
+            (pretty_time(datetime.now() - script_start)))
 
     #
     # Finish up
