@@ -43,5 +43,3 @@ def rsync(local_file, remote_path, port=None, message='Synced'):
         logging.info("%s %s in %s" % (message,
                     os.path.basename(local_file),
                     pretty.time(datetime.datetime.now() - start)))
-    finally:
-        os.remove(local_file)
