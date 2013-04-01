@@ -237,7 +237,7 @@ def main(args):
                         'name': z,
                         'size': os.path.getsize(os.path.join(target_out_dir, z)),
                         'type': 'nightly',
-                        'location': '%s/%s' % (DATE,name),
+                        'location': '%s/%s' % (DATE,z),
                 })
                 shutil.copy2(os.path.join(target_out_dir, z),os.path.join(temp_dir, z))
                 if uploading:
