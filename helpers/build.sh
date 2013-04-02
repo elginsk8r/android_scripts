@@ -3,7 +3,8 @@
 
 run_build () {
     local target=$1 args="otapackage"
-    local load=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
+    local cpus=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
+    local load=$(expr $cpus \* 3 / 2)
     test "$target" = "passion" && args+=" systemupdatepackage"
     source build/envsetup.sh >/dev/null 2>&1 || return 1
     breakfast $target        >/dev/null 2>&1 || return 1
