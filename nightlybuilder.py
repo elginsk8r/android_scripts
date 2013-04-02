@@ -266,23 +266,24 @@ def main(args):
             if mirroring:
                 m_q.put(os.path.join(temp_dir,'info.json'))
         # for website
-        main_manifest = os.path.join(droid_mirror,'manifest.json')
-        try:
-            f = open(main_manifest,'r')
-        except IOError as e:
-            logging.error('Failed to open %s: %s' % (main_manifest,e))
-        else:
-            with f:
-                entries = json.load(f)
-            for e in json_info:
-                entries.append(e)
+        if mirroring:
+            main_manifest = os.path.join(droid_mirror,'manifest.json')
             try:
-                f = open(main_manifest,'w')
+                f = open(main_manifest,'r')
             except IOError as e:
                 logging.error('Failed to open %s: %s' % (main_manifest,e))
             else:
                 with f:
-                    json.dump(entries,f,indent=2)
+                    entries = json.load(f)
+                for e in json_info:
+                    entries.append(e)
+                try:
+                    f = open(main_manifest,'w')
+                except IOError as e:
+                    logging.error('Failed to open %s: %s' % (main_manifest,e))
+                else:
+                    with f:
+                        json.dump(entries,f,indent=2)
 
 
     # wait for builds to finish uploading/mirroring
