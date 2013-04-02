@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess as sp
 import Queue
+import json
 
 # local
 from drewis import __version__
@@ -147,6 +148,9 @@ def main(args):
     # keep track of builds
     build_start = datetime.now()
 
+    # for json manifest
+    json_info = []
+
     # build each target
     for target in args.target:
         os.putenv('EV_BUILD_TARGET', target)
@@ -205,8 +209,21 @@ def main(args):
                     except OSError as e:
                         log.error('failed to make mirror dir: %s' % (e))
 
+                zip_info = []
                 for z in zips:
-                    shutil.copy(os.path.join(target_out_dir, z),
+                    zip_path = os.path.join(target_out_dir, z)
+                    zip_info.append({
+                            'date': DATE,
+                            'device': target,
+                            'count': 0,
+                            'message': 'Release build for %s' % target,
+                            'md5sum': md5sum(zip_path),
+                            'name': z,
+                            'size': os.path.getsize(zip_path),
+                            'type': 'nightly',
+                            'location': '%s/%s' % (codename,z),
+                    })
+                    shutil.copy2(zip_path,
                             os.path.join(temp_dir, z))
                     if uploading:
                         upq.put((os.path.join(temp_dir, z),
@@ -215,6 +232,10 @@ def main(args):
                     if mirroring:
                         m_q.put((os.path.join(temp_dir, z),
                                 os.path.join(mirror_path, codename)))
+                json_info.append({
+                        'codename': codename,
+                        'zip_info': zip_info,
+                })
             else:
                 if not args.quiet:
                     print 'Failed to get codename for %s' % (target)
@@ -236,6 +257,55 @@ def main(args):
         m_q.join()
     if uploading:
         upq.join()
+
+    if json_info and mirroring: # no uploading for now
+        for entries in json_info:
+            # Since builds are stored in the same directory
+            # we have to read the old entries, add new ones, and rewrite
+            device_manifest = os.path.join(mirror_path,
+                              entries.get('codename'), 'info.json')
+            try:
+                f = open(device_manifest)
+            except IOError as e:
+                if not args.quiet:
+                    print e
+                log.error('%s' % e)
+            else:
+                with f:
+                    device_entries = json.load(f)
+                for e in entries.get('zip_info'):
+                    device_entries.append(e)
+                try:
+                    f = open(device_manifest,'w')
+                except IOError as e:
+                    if not args.quiet:
+                        print e
+                    log.error('%s' % (e))
+                else:
+                    with f:
+                        json.dump(device_entries, f, indent=2)
+        main_manifest = os.path.join(mirror_path,'manifest.json')
+        try:
+            f = open(main_manifest,'r')
+        except IOError as e:
+            if not args.quiet:
+                print e
+            log.error('%s' % e)
+        else:
+            with f:
+                main_entries = json.load(f)
+            for entries in json_info:
+                for e in entries.get('zip_info'):
+                    main_entries.append(e)
+            try:
+                f = open(main_manifest,'w')
+            except IOError as e:
+                if not args.quiet:
+                    print e
+                log.error('%s' % e)
+            else:
+                with f:
+                    json.dump(main_entries,f,indent=2)
 
     # cleanup
     shutil.rmtree(temp_dir)
