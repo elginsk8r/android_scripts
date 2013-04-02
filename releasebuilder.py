@@ -7,7 +7,6 @@ import logging as log
 import os
 import shutil
 import subprocess as sp
-import tempfile
 import Queue
 
 # local
@@ -138,7 +137,12 @@ def main(args):
     #
 
     # for zip storage
-    temp_dir = tempfile.mkdtemp()
+    if os.path.isdir('/dev/shm'):
+        temp_dir = '/dev/shm/tmp-releasebuilder_zips'
+    else:
+        temp_dir = '/tmp/tmp-releasebuilder_zips'
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
 
     # keep track of builds
     build_start = datetime.now()
