@@ -3,7 +3,7 @@
 
 import argparse
 from datetime import datetime
-import logging
+import logging as log
 import os
 import shutil
 import subprocess
@@ -42,7 +42,7 @@ log_dir = os.path.join(args.source, 'release_logs')
 if not os.path.isdir(log_dir):
     os.mkdir(log_dir)
 scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
-logging.basicConfig(filename=scriptlog, level=logging.INFO,
+log.basicConfig(filename=scriptlog, level=log.INFO,
         format='%(levelname)s:%(message)s')
 
 def get_codename(target):
@@ -98,9 +98,9 @@ def main(args):
         if droid_host and droid_user and droid_path:
             uploading = True
         else:
-            logging.error('DROID_MIRROR not set')
-            logging.error('DROID_HOST or DROID_USER or DROID_PATH not set')
-            logging.error('no where put builds. BAILING!!')
+            log.error('DROID_MIRROR not set')
+            log.error('DROID_HOST or DROID_USER or DROID_PATH not set')
+            log.error('no where put builds. BAILING!!')
             if not args.quiet:
                 print 'You must specify somewhere to put the builds. Exiting'
             exit()
@@ -157,7 +157,7 @@ def main(args):
             except subprocess.CalledProcessError as e:
                 if not args.quiet:
                     print 'Build returned %d for %s' % (e.returncode, target)
-                logging.error('Build returned %d for %s' % (e.returncode, target))
+                log.error('Build returned %d for %s' % (e.returncode, target))
                 if not args.quiet:
                     handle_build_errors(os.path.join(temp_dir,'build_stderr'),
                             verbose=True)
@@ -168,7 +168,7 @@ def main(args):
                 if not args.quiet:
                     print('Built %s in %s' %
                             (target, pretty_time(datetime.now() - target_start)))
-                logging.info('Built %s in %s' %
+                log.info('Built %s in %s' %
                         (target, pretty_time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
         zips = []
@@ -191,7 +191,7 @@ def main(args):
                         if not args.quiet:
                             print('ssh returned %d while making directories' %
                                     (e.returncode))
-                        logging.error('ssh returned %d while making directories' %
+                        log.error('ssh returned %d while making directories' %
                                 (e.returncode))
 
                 if mirroring:
@@ -199,7 +199,7 @@ def main(args):
                         if not os.path.isdir(os.path.join(mirror_path, codename)):
                             os.makedirs(os.path.join(mirror_path, codename))
                     except OSError as e:
-                        logging.error('failed to make mirror dir: %s' % (e))
+                        log.error('failed to make mirror dir: %s' % (e))
 
                 for z in zips:
                     shutil.copy(os.path.join(target_out_dir, z),
@@ -214,17 +214,17 @@ def main(args):
             else:
                 if not args.quiet:
                     print 'Failed to get codename for %s' % (target)
-                logging.error('Failed to get codename for %s' % (target))
+                log.error('Failed to get codename for %s' % (target))
         else:
             if not args.quiet:
                 print 'No zips found for %s' % (target)
-            logging.warning('No zips found for %s' % target)
+            log.warning('No zips found for %s' % target)
 
     # write total buildtime
     if not args.quiet:
         print('Built all targets in %s' %
                 (pretty_time(datetime.now() - build_start)))
-    logging.info('Built all targets in %s' %
+    log.info('Built all targets in %s' %
             (pretty_time(datetime.now() - build_start)))
 
     # wait for builds to finish uploading/mirroring
@@ -239,7 +239,7 @@ def main(args):
     if not args.quiet:
         print('Total run time: %s' %
                 (pretty_time(datetime.now() - script_start)))
-    logging.info('Total run time: %s' %
+    log.info('Total run time: %s' %
             (pretty_time(datetime.now() - script_start)))
 
     # cd previous working dir
