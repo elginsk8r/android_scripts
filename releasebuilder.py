@@ -47,14 +47,18 @@ log.basicConfig(filename=scriptlog, level=log.INFO,
 
 def get_codename(target):
     codename = None
-    for p,d,f in os.walk('device'):
-        for dirs in d:
-            if target == dirs:
-                with open(os.path.join(p,dirs,'ev.mk')) as f:
-                    contents = f.read().split('\n')
-                    for line in contents:
-                        if 'PRODUCT_CODENAME' in line:
-                            codename = line.split(' ')[2]
+    for path,dirs,files in os.walk('device'):
+        for d in dirs:
+            if target == d:
+                try:
+                    f = open(os.path.join(path,d,'ev.mk'))
+                except IOError:
+                    continue
+                else:
+                    with f:
+                        for line in f.readlines():
+                            if 'PRODUCT_CODENAME' in line:
+                                codename = line.rstrip('\n').split(' ')[2]
     return codename
 
 def main(args):
