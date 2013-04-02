@@ -6,7 +6,7 @@ from datetime import datetime
 import logging as log
 import os
 import shutil
-import subprocess
+import subprocess as sp
 import tempfile
 import Queue
 
@@ -151,10 +151,10 @@ def main(args):
             try:
                 with open(os.path.join(temp_dir,'build_stderr'), 'w') as build_stderr:
                     target_start = datetime.now()
-                    subprocess.check_call([os.path.join(
+                    sp.check_call([os.path.join(
                             HELPER_DIR, 'build.sh')],
-                            stdout=build_stderr, stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
+                            stdout=build_stderr, stderr=sp.STDOUT)
+            except sp.CalledProcessError as e:
                 if not args.quiet:
                     print 'Build returned %d for %s' % (e.returncode, target)
                 log.error('Build returned %d for %s' % (e.returncode, target))
@@ -183,11 +183,11 @@ def main(args):
                 if uploading:
                     # make the remote directories
                     try:
-                        subprocess.check_call(['ssh', '-p%s' % (droid_host_port),
+                        sp.check_call(['ssh', '-p%s' % (droid_host_port),
                                 '%s@%s' % (droid_user, droid_host),
                                 'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
                                 codename),os.path.join(upload_path, codename))])
-                    except subprocess.CalledProcessError as e:
+                    except sp.CalledProcessError as e:
                         if not args.quiet:
                             print('ssh returned %d while making directories' %
                                     (e.returncode))
