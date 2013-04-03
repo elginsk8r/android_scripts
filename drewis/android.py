@@ -8,7 +8,7 @@ from subprocess import CalledProcessError as CPE
 from tempfile import mkdtemp
 from shutil import rmtree
 
-def _log_build_errors(error_file,verbose=False):
+def _log_build_errors(error_file):
     grepcmds = [
         ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
         ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
@@ -16,8 +16,6 @@ def _log_build_errors(error_file,verbose=False):
         ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
     try:
         with open(error_file) as f:
-            if verbose:
-                print 'Dumping errors...'
             logging.error('Dumping errors...')
             for grepcmd in grepcmds:
                 try:
@@ -26,23 +24,16 @@ def _log_build_errors(error_file,verbose=False):
                     pass # Raised if grep doesn't find any matches
                 else:
                     if errors:
-                        if verbose:
-                            print grepcmd[0]
                         logging.error(grepcmd[0])
                         for line in errors.split('\n'):
-                            if verbose:
-                                print line
                             logging.error(line)
                 f.seek(0)
-            if verbose:
-                print 'Hopefully that helps'
             logging.error('Hopefully that helps')
     except IOError as e:
-        if verbose:
-            print 'Error opening %s: %s' % (error_file,e)
         logging.error('Error opening %s: %s' % (error_file,e))
 
-def build(target, packages, clobber=True,verbose=False):
+def build(target, packages, clobber=True):
+    failed = False
     cmds = {
         'clobber': ('make','clobber'),
     }
@@ -53,8 +44,6 @@ def build(target, packages, clobber=True,verbose=False):
         try:
             check_call(cmds.get('clobber'))
         except CPE as e:
-            if verbose:
-                print e
             logging.error(e)
 
     tempd = mkdtemp() # I dont understand mkstemp
@@ -69,10 +58,10 @@ def build(target, packages, clobber=True,verbose=False):
                           (target,load,packages), stdout=out, stderr=err, shell=True)
     except IOError:
         pass
+        failed = True
     except CPE as e:
-        if verbose:
-            print e
         logging.error(e)
-        _log_build_errors(tempf,verbose)
+        _log_build_errors(tempf)
+        failed = True
     rmtree(tempd)
-    return
+    return failed

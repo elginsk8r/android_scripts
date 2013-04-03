@@ -24,7 +24,7 @@ def pretty_time(t):
     m, s = divmod(r, 60)
     return '%sh %sm %ss' % (h, m, s)
 
-def handle_build_errors(error_file,verbose=False):
+def handle_build_errors(error_file):
     grepcmds = [
         ('GCC:', ('grep', '-B 1', '-A 2', '-e error:')),
         ('JAVA:', ('grep', '-B 10', '-e error$')), # combine these someday
@@ -32,8 +32,6 @@ def handle_build_errors(error_file,verbose=False):
         ('MAKE:', ('grep', '-e \*\*\*\ '))] # No idea why ^make won't work
     try:
         with open(error_file) as f:
-            if verbose:
-                print 'Dumping errors...'
             logging.error('Dumping errors...')
             for grepcmd in grepcmds:
                 try:
@@ -42,18 +40,10 @@ def handle_build_errors(error_file,verbose=False):
                     pass
                 else:
                     if errors:
-                        if verbose:
-                            print grepcmd[0]
                         logging.error(grepcmd[0])
                         for line in errors.split('\n'):
-                            if verbose:
-                                print line
                             logging.error(line)
                 f.seek(0)
-            if verbose:
-                print 'Hopefully that helps'
             logging.error('Hopefully that helps')
     except IOError as e:
-        if verbose:
-            print 'Error opening %s: %s' % (error_file,e)
         logging.error('Error opening %s: %s' % (error_file,e))
