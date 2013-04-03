@@ -148,22 +148,23 @@ def main(args):
     if not args.nosync:
         # common directory for all changelogs
         changelog_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_changelogs')
-        if not os.path.isdir(changelog_dir):
-            os.mkdir(changelog_dir)
+        try:
+            if not os.path.isdir(changelog_dir):
+                os.mkdir(changelog_dir)
+        except OSError:
+            pass
         # changelog
         changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.log')
         # sync the tree
-        try:
-            with open(changelog,'w') as cl:
-                subprocess.check_call([os.path.join(HELPER_DIR, 'sync.sh')],
-                        stdout=cl)
-        except subprocess.CalledProcessError as e:
-            logging.error('Sync returned %d' % (e.returncode))
-            logging.error('Skipping the build. You need to fix the repo')
+        if android.reposync():
+            logging.error('Sync failed. Skipping the build')
             args.nobuild = True
             # Remove out so we dont upload yesterdays build
             if os.path.isdir('out'):
                 shutil.rmtree('out')
+        else:
+            android.get_changelog(DATE,changelog)
+
         # create the html changelog
         if os.path.exists(changelog):
             logging.info('Created changelog for %s' % DATE)
