@@ -3,7 +3,7 @@
 
 import argparse
 from datetime import datetime
-import logging as log
+import logging
 import os
 import shutil
 import subprocess as sp
@@ -12,7 +12,7 @@ import json
 
 # local
 from drewis import __version__
-from drewis import html,rsync
+from drewis import html,rsync,android
 from drewis.utils import *
 
 # handle commandline args
@@ -27,6 +27,8 @@ parser.add_argument('--port', help="Listen port for host sshd")
 parser.add_argument('--user', help="Username for upload host")
 parser.add_argument('--remotedir', help="Remote path for uploads")
 parser.add_argument('--localdir', help="Local path for uploads")
+parser.add_argument('--rebuild', help="Don't clobber before building",
+                    action="store_false") # backwards
 parser.add_argument('--nobuild', help=argparse.SUPPRESS,
                     action="store_true")
 parser.add_argument('-q', '--quiet', help="Suppress all output",
@@ -36,14 +38,6 @@ args = parser.parse_args()
 # static vars
 HELPER_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers')
 DATE = datetime.now().strftime('%Y.%m.%d')
-
-# script logging
-log_dir = os.path.join(args.source, 'release_logs')
-if not os.path.isdir(log_dir):
-    os.mkdir(log_dir)
-scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
-log.basicConfig(filename=scriptlog, level=log.INFO,
-        format='%(levelname)s:%(message)s')
 
 def get_codename(target):
     codename = None
@@ -63,9 +57,21 @@ def get_codename(target):
 
 def main(args):
 
-    # Info
+    # script logging
+    log_dir = os.path.join(args.source, 'release_logs')
+    try:
+        if not os.path.isdir(log_dir):
+            os.mkdir(log_dir)
+    except OSError:
+        pass
+    scriptlog = os.path.join(log_dir, 'scriptlog-%s.log' % DATE)
+    logging.basicConfig(filename=scriptlog,
+                        format='%(levelname)-8s %(message)s',
+                        level=logging.INFO,
+                        )
     if not args.quiet:
-        print 'Logging to %s' % scriptlog
+        console = logging.StreamHandler()
+        logging.getLogger('').addHandler(console)
 
     # for total runtime
     script_start = datetime.now()
@@ -102,11 +108,9 @@ def main(args):
         if droid_host and droid_user and droid_path:
             uploading = True
         else:
-            log.error('DROID_MIRROR not set')
-            log.error('DROID_HOST or DROID_USER or DROID_PATH not set')
-            log.error('no where put builds. BAILING!!')
-            if not args.quiet:
-                print 'You must specify somewhere to put the builds. Exiting'
+            logging.error('DROID_MIRROR not set')
+            logging.error('DROID_HOST or DROID_USER or DROID_PATH not set')
+            logging.error('no where put builds. BAILING!!')
             exit()
     else:
         mirroring = True
@@ -157,30 +161,15 @@ def main(args):
 
     # build each target
     for target in args.target:
-        os.putenv('EV_BUILD_TARGET', target)
-        # Run the build: target will be pulled from env
         if not args.nobuild:
-            try:
-                with open(os.path.join(temp_dir,'build_stderr'), 'w') as build_stderr:
-                    target_start = datetime.now()
-                    sp.check_call([os.path.join(
-                            HELPER_DIR, 'build.sh')],
-                            stdout=build_stderr, stderr=sp.STDOUT)
-            except sp.CalledProcessError as e:
-                if not args.quiet:
-                    print 'Build returned %d for %s' % (e.returncode, target)
-                log.error('Build returned %d for %s' % (e.returncode, target))
-                if not args.quiet:
-                    handle_build_errors(os.path.join(temp_dir,'build_stderr'),
-                            verbose=True)
-                else:
-                    handle_build_errors(os.path.join(temp_dir,'build_stderr'))
-                continue
+            target_start = datetime.now()
+            pkg = 'otapackage'
+            if target == 'passion':
+                pkg = 'otapackage systemupdatepackage'
+            if android.build(target,pkg,args.rebuild):
+                continue # Failed
             else:
-                if not args.quiet:
-                    print('Built %s in %s' %
-                            (target, pretty_time(datetime.now() - target_start)))
-                log.info('Built %s in %s' %
+                logging.info('Built %s in %s' %
                         (target, pretty_time(datetime.now() - target_start)))
         # find and add the zips to the rsync queues
         zips = []
@@ -200,10 +189,7 @@ def main(args):
                                 'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
                                 codename),os.path.join(upload_path, codename))])
                     except sp.CalledProcessError as e:
-                        if not args.quiet:
-                            print('ssh returned %d while making directories' %
-                                    (e.returncode))
-                        log.error('ssh returned %d while making directories' %
+                        logging.error('ssh returned %d while making directories' %
                                 (e.returncode))
 
                 if mirroring:
@@ -211,7 +197,7 @@ def main(args):
                         if not os.path.isdir(os.path.join(mirror_path, codename)):
                             os.makedirs(os.path.join(mirror_path, codename))
                     except OSError as e:
-                        log.error('failed to make mirror dir: %s' % (e))
+                        logging.error('failed to make mirror dir: %s' % (e))
 
                 zip_info = []
                 for z in zips:
@@ -241,19 +227,12 @@ def main(args):
                         'zip_info': zip_info,
                 })
             else:
-                if not args.quiet:
-                    print 'Failed to get codename for %s' % (target)
-                log.error('Failed to get codename for %s' % (target))
+                logging.error('Failed to get codename for %s' % (target))
         else:
-            if not args.quiet:
-                print 'No zips found for %s' % (target)
-            log.warning('No zips found for %s' % target)
+            logging.warning('No zips found for %s' % target)
 
     # write total buildtime
-    if not args.quiet:
-        print('Built all targets in %s' %
-                (pretty_time(datetime.now() - build_start)))
-    log.info('Built all targets in %s' %
+    logging.info('Built all targets in %s' %
             (pretty_time(datetime.now() - build_start)))
 
     # wait for builds to finish uploading/mirroring
@@ -272,9 +251,7 @@ def main(args):
             try:
                 f = open(device_manifest)
             except IOError as e:
-                if not args.quiet:
-                    print e
-                log.error('%s' % e)
+                logging.error('%s' % e)
             else:
                 with f:
                     device_entries = json.load(f)
@@ -283,9 +260,7 @@ def main(args):
             try:
                 f = open(device_manifest,'w')
             except IOError as e:
-                if not args.quiet:
-                    print e
-                log.error('%s' % (e))
+                logging.error('%s' % (e))
             else:
                 with f:
                     json.dump(device_entries, f, indent=2)
@@ -293,9 +268,7 @@ def main(args):
         try:
             f = open(main_manifest,'r')
         except IOError as e:
-            if not args.quiet:
-                print e
-            log.error('%s' % e)
+            logging.error('%s' % e)
         else:
             with f:
                 main_entries = json.load(f)
@@ -305,9 +278,7 @@ def main(args):
             try:
                 f = open(main_manifest,'w')
             except IOError as e:
-                if not args.quiet:
-                    print e
-                log.error('%s' % e)
+                logging.error('%s' % e)
             else:
                 with f:
                     json.dump(main_entries,f,indent=2)
@@ -315,10 +286,7 @@ def main(args):
     # cleanup
     shutil.rmtree(temp_dir)
 
-    if not args.quiet:
-        print('Total run time: %s' %
-                (pretty_time(datetime.now() - script_start)))
-    log.info('Total run time: %s' %
+    logging.info('Total run time: %s' %
             (pretty_time(datetime.now() - script_start)))
 
     # cd previous working dir
