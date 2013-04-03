@@ -36,15 +36,18 @@ args = parser.parse_args()
 HELPER_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers')
 DATE = datetime.now().strftime('%Y.%m.%d')
 
-# script logging
-log_dir = os.path.join(args.source, 'nightly_logs')
-if not os.path.isdir(log_dir):
-    os.mkdir(log_dir)
-scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
-logging.basicConfig(filename=scriptlog, level=logging.INFO,
-        format='%(levelname)s:%(message)s')
-
 def main(args):
+
+    # script logging
+    log_dir = os.path.join(args.source, 'nightly_logs')
+    try:
+        if not os.path.isdir(log_dir):
+            os.mkdir(log_dir)
+    except OSError:
+        pass
+    scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.log')
+    logging.basicConfig(filename=scriptlog, level=logging.INFO,
+            format='%(levelname)-8s %(message)s')
 
     # for total runtime
     script_start = datetime.now()
