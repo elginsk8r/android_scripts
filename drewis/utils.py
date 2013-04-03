@@ -3,7 +3,6 @@
 __all__ = [
     "md5sum",
     "pretty_time",
-    "handle_build_errors",
 ]
 
 import hashlib
