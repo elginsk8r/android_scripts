@@ -6,7 +6,8 @@ from datetime import datetime
 import logging
 import os
 import shutil
-import subprocess as sp
+from subprocess import check_call
+from subprocess import CalledProcessError as CPE
 import Queue
 import json
 
@@ -184,11 +185,11 @@ def main(args):
                 if uploading:
                     # make the remote directories
                     try:
-                        sp.check_call(['ssh', '-p%s' % (droid_host_port),
+                        check_call(['ssh', '-p%s' % (droid_host_port),
                                 '%s@%s' % (droid_user, droid_host),
                                 'test -d %s || mkdir -p %s' % (os.path.join(upload_path,
                                 codename),os.path.join(upload_path, codename))])
-                    except sp.CalledProcessError as e:
+                    except CPE as e:
                         logging.error('ssh returned %d while making directories' %
                                 (e.returncode))
 
