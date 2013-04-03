@@ -9,4 +9,5 @@ __all__ = [
     "html",
     "rsync"
     "utils",
+    "android",
 ]
