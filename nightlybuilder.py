@@ -12,7 +12,7 @@ import Queue
 
 # local
 from drewis import __version__
-from drewis import html,rsync
+from drewis import html,rsync,android
 from drewis.utils import *
 
 # handle commandline args
@@ -203,19 +203,13 @@ def main(args):
 
     # build each target
     for target in args.target:
-        os.putenv('EV_BUILD_TARGET', target)
-        # Run the build: target will be pulled from env
         if not args.nobuild:
-            try:
-                with open(os.path.join(temp_dir,'build_stderr'), 'w') as build_stderr:
-                    target_start = datetime.now()
-                    subprocess.check_call([os.path.join(
-                            HELPER_DIR, 'build.sh')],
-                            stdout=build_stderr, stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError as e:
-                logging.error('Build returned %d for %s' % (e.returncode, target))
-                handle_build_errors(os.path.join(temp_dir,'build_stderr'))
-                continue
+            target_start = datetime.now()
+            pkg = 'otapackage'
+            if target == 'passion':
+                pkg = 'otapackage systemupdatepackage'
+            if android.build(target,pkg):
+                continue # Failed
             else:
                 logging.info('Built %s in %s' %
                         (target, pretty_time(datetime.now() - target_start)))
