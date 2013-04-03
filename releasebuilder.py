@@ -268,6 +268,7 @@ def main(args):
             # we have to read the old entries, add new ones, and rewrite
             device_manifest = os.path.join(mirror_path,
                               entries.get('codename'), 'info.json')
+            device_entries = []
             try:
                 f = open(device_manifest)
             except IOError as e:
@@ -277,17 +278,17 @@ def main(args):
             else:
                 with f:
                     device_entries = json.load(f)
-                for e in entries.get('zip_info'):
-                    device_entries.append(e)
-                try:
-                    f = open(device_manifest,'w')
-                except IOError as e:
-                    if not args.quiet:
-                        print e
-                    log.error('%s' % (e))
-                else:
-                    with f:
-                        json.dump(device_entries, f, indent=2)
+            for e in entries.get('zip_info'):
+                device_entries.append(e)
+            try:
+                f = open(device_manifest,'w')
+            except IOError as e:
+                if not args.quiet:
+                    print e
+                log.error('%s' % (e))
+            else:
+                with f:
+                    json.dump(device_entries, f, indent=2)
         main_manifest = os.path.join(mirror_path,'manifest.json')
         try:
             f = open(main_manifest,'r')
