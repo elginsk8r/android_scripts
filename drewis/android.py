@@ -41,9 +41,6 @@ def _log_build_errors(error_file):
 
 def build(target, packages, clobber=True):
     '''Returns true on failure'''
-    cmds = {
-        'clobber': ('make','clobber'),
-    }
 
     try:
         with open('/proc/meminfo') as f:
@@ -56,6 +53,11 @@ def build(target, packages, clobber=True):
     if jobs > max_jobs:
         jobs = max_jobs
 
+    cmds = {
+        'clobber': ('make','clobber'),
+        'build': "source build/envsetup.sh && breakfast %s && make -j%d %s" %(target,jobs,packages)
+    }
+
     if clobber:
         try:
             with open(os.devnull,'w') as out:
@@ -65,8 +67,7 @@ def build(target, packages, clobber=True):
 
     tempd = mkdtemp() # I dont understand mkstemp
     tempf = os.path.join(tempd,'buildout')
-    build_thread = CommandThread("source build/envsetup.sh && breakfast %s && make -j%d %s" %
-                          (target,jobs,packages))
+    build_thread = CommandThread(cmds.get('build'))
     try:
         with open(tempf,'w') as err, open(os.devnull,'w') as out:
             # Give builds 90 mins to complete, if they haven't finished by then
@@ -76,10 +77,11 @@ def build(target, packages, clobber=True):
     except IOError:
         failed = True
     if build_error != 0:
+        logging.error('FAILED: %s' % cmds.get('build'))
         _log_build_errors(tempf)
         failed = True
     rmtree(tempd)
-    return failed
+    return not failed
 
 def reposync():
     cmds = {
