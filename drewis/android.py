@@ -48,7 +48,8 @@ def build(target, packages, clobber=True):
 
     if clobber:
         try:
-            check_call(cmds.get('clobber'))
+            with open(os.devnull,'w') as out:
+                check_call(cmds.get('clobber'), stdout=out, stderr=STDOUT)
         except CPE as e:
             logging.error(e)
 
