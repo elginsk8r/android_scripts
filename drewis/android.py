@@ -2,7 +2,9 @@
 
 import os
 import logging
-from subprocess import check_call, check_output, STDOUT
+import threading
+import traceback
+from subprocess import check_call, check_output, STDOUT, Popen
 from subprocess import CalledProcessError as CPE
 from tempfile import mkdtemp
 from shutil import rmtree
@@ -61,19 +63,31 @@ def build(target, packages, clobber=True):
 
     tempd = mkdtemp() # I dont understand mkstemp
     tempf = os.path.join(tempd,'buildout')
+#    try:
+#        with open(tempf,'w') as err, open(os.devnull,'w') as out:
+#            # This is ugly and /very/ bad way to do this,
+#            # But I would rather have it this way than calling a script to run
+#            # these commands. So if the parent script is killed, make doesnt
+#            # continue running in the background
+#            check_call("source build/envsetup.sh && breakfast %s && make -j%d %s" %
+#                          (target,jobs,packages), stdout=out, stderr=err, shell=True)
+#    except IOError:
+#        failed = True
+#    except CPE as e:
+#        logging.error(e)
+#        _log_build_errors(tempf)
+#        failed = True
+    bt = BuildThread("source build/envsetup.sh && breakfast %s && make -j%d %s" %
+                          (target,jobs,packages))
     try:
         with open(tempf,'w') as err, open(os.devnull,'w') as out:
-            # This is ugly and /very/ bad way to do this,
-            # But I would rather have it this way than calling a script to run
-            # these commands. So if the parent script is killed, make doesnt
-            # continue running in the background
-            check_call("source build/envsetup.sh && breakfast %s && make -j%d %s" %
-                          (target,jobs,packages), stdout=out, stderr=err, shell=True)
+            # Give builds 90 mins to complete, if they haven't finished by then
+            # something is wrong and they need to be killed
+            build_status, build_error = bt.run(timeout=5400, stdout=out, stderr=err, shell=True)
     except IOError:
-        pass
         failed = True
-    except CPE as e:
-        logging.error(e)
+    if build_error != 0:
+        logging.error(build_status)
         _log_build_errors(tempf)
         failed = True
     rmtree(tempd)
@@ -162,3 +176,45 @@ def get_changelog(current,changelog):
         except CPE as e:
             logging.error(e)
     return
+
+class BuildThread(object):
+    """
+    Enables to run subprocess commands in a different thread with TIMEOUT option.
+
+    Based on kirpits improvement https://gist.github.com/kirpit/1306188
+    of jcollado's solution:
+    http://stackoverflow.com/questions/1191374/subprocess-with-timeout/4825933#4825933
+    """
+    command = None
+    process = None
+    status = None
+    output, error = '', ''
+
+    def __init__(self, command):
+#        if isinstance(command, basestring):
+#            command = shlex.split(command)
+        self.command = command
+
+    def run(self, timeout=None, **kwargs):
+        """ Run a command then return: (status, output, error). """
+        def target(**kwargs):
+            try:
+                self.process = Popen(self.command, **kwargs)
+                self.output, self.error = self.process.communicate()
+                self.status = self.process.returncode
+            except:
+                self.error = traceback.format_exc()
+                self.status = -1
+        # default stdout and stderr
+#        if 'stdout' not in kwargs:
+#            kwargs['stdout'] = subprocess.PIPE
+#        if 'stderr' not in kwargs:
+#            kwargs['stderr'] = subprocess.PIPE
+        # thread
+        thread = threading.Thread(target=target, kwargs=kwargs)
+        thread.start()
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+        return self.status, self.error #self.output, self.error
