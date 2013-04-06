@@ -212,7 +212,7 @@ def main(args):
             pkg = 'otapackage'
             if target == 'passion':
                 pkg = 'otapackage systemupdatepackage'
-            if not android.build(target,pkg):
+            if android.build(target,pkg):
                 continue # Failed
             else:
                 logging.info('Built %s in %s' %
