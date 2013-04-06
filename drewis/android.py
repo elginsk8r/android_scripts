@@ -41,7 +41,6 @@ def _log_build_errors(error_file):
 
 def build(target, packages, clobber=True):
     '''Returns true on failure'''
-
     cmds = {
         'clobber': ('make','clobber'),
     }
@@ -54,7 +53,6 @@ def build(target, packages, clobber=True):
 
     jobs = 24 # Upper limit
     max_jobs = int(mem_total)/2000000
-
     if jobs > max_jobs:
         jobs = max_jobs
 
@@ -65,13 +63,23 @@ def build(target, packages, clobber=True):
         except CPE as e:
             logging.error(e)
 
-    build_job = BuildThread(target,jobs,packages)
-    # Give builds 90 mins to complete, if they haven't finished by then
-    # something is wrong and they need to be killed
-    build_status, build_error = build_job.run(timeout=5400)
+    tempd = mkdtemp() # I dont understand mkstemp
+    tempf = os.path.join(tempd,'buildout')
+    build_thread = CommandThread("source build/envsetup.sh && breakfast %s && make -j%d %s" %
+                          (target,jobs,packages))
+    try:
+        with open(tempf,'w') as err, open(os.devnull,'w') as out:
+            # Give builds 90 mins to complete, if they haven't finished by then
+            # something is wrong and they need to be killed
+            build_status, build_error = build_thread.run(timeout=5400, stdout=out,
+                                                         stderr=err, shell=True)
+    except IOError:
+        failed = True
     if build_error != 0:
-        return False
-    return True
+        _log_build_errors(tempf)
+        failed = True
+    rmtree(tempd)
+    return failed
 
 def reposync():
     cmds = {
@@ -157,7 +165,7 @@ def get_changelog(current,changelog):
             logging.error(e)
     return
 
-class BuildThread(object):
+class CommandThread(object):
     """
     Enables to run subprocess commands in a different thread with TIMEOUT option.
 
@@ -170,30 +178,21 @@ class BuildThread(object):
     status = None
     output, error = '', ''
 
-    def __init__(self, target,jobs,packages):
-        self.command = "source build/envsetup.sh && breakfast %s && make -j%d %s" %
-                          (target,jobs,packages)
+    def __init__(self, command):
+        self.command = command
 
-    def run(self, timeout=None):
+    def run(self, timeout=None, **kwargs):
         """ Run a command then return: (status, error, output). """
-        def runner():
-            failed = False
+        def target(**kwargs):
             try:
-                tempd = mkdtemp() # I dont understand mkstemp
-                tempf = os.path.join(tempd,'buildout')
-                with open(tempf,'w') as err, open(os.devnull,'w') as out:
-                    self.process = Popen(self.command, stdout=out, stderr=err,
-                                        shell=True) #<<Bad but needed
-                    self.output, self.error = self.process.communicate()
-                    self.status = self.process.returncode
+                self.process = Popen(self.command, **kwargs)
+                self.output, self.error = self.process.communicate()
+                self.status = self.process.returncode
             except:
                 self.error = traceback.format_exc()
                 self.status = -1
-                _log_build_errors(tempf)
-            finally:
-                rmtree(tempd)
         # thread
-        thread = threading.Thread(target=runner)
+        thread = threading.Thread(target=target, kwargs=kwargs)
         thread.start()
         thread.join(timeout)
         if thread.is_alive():
