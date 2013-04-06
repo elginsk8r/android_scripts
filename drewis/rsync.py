@@ -7,7 +7,7 @@ import subprocess
 import threading
 
 # local
-import pretty
+from utils import pretty_time
 
 class rsyncThread(threading.Thread):
     '''Threaded rsync task'''
@@ -42,4 +42,4 @@ def rsync(local_file, remote_path, port=None, message='Synced'):
     else:
         logging.info("%s %s in %s" % (message,
                     os.path.basename(local_file),
-                    pretty.time(datetime.datetime.now() - start)))
+                    pretty_time(datetime.datetime.now() - start)))
