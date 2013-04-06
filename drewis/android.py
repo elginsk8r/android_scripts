@@ -40,17 +40,21 @@ def _log_build_errors(error_file):
         logging.error('Error opening %s: %s' % (error_file,e))
 
 def build(target, packages, clobber=True):
-    failed = False
+    '''Returns true on failure'''
+
     cmds = {
         'clobber': ('make','clobber'),
     }
+
     try:
         with open('/proc/meminfo') as f:
             mem_total = f.readline().split()[1]
     except IOError:
         mem_total = 8199922 # 8GB
+
     jobs = 24 # Upper limit
     max_jobs = int(mem_total)/2000000
+
     if jobs > max_jobs:
         jobs = max_jobs
 
@@ -61,37 +65,13 @@ def build(target, packages, clobber=True):
         except CPE as e:
             logging.error(e)
 
-    tempd = mkdtemp() # I dont understand mkstemp
-    tempf = os.path.join(tempd,'buildout')
-#    try:
-#        with open(tempf,'w') as err, open(os.devnull,'w') as out:
-#            # This is ugly and /very/ bad way to do this,
-#            # But I would rather have it this way than calling a script to run
-#            # these commands. So if the parent script is killed, make doesnt
-#            # continue running in the background
-#            check_call("source build/envsetup.sh && breakfast %s && make -j%d %s" %
-#                          (target,jobs,packages), stdout=out, stderr=err, shell=True)
-#    except IOError:
-#        failed = True
-#    except CPE as e:
-#        logging.error(e)
-#        _log_build_errors(tempf)
-#        failed = True
-    bt = BuildThread("source build/envsetup.sh && breakfast %s && make -j%d %s" %
-                          (target,jobs,packages))
-    try:
-        with open(tempf,'w') as err, open(os.devnull,'w') as out:
-            # Give builds 90 mins to complete, if they haven't finished by then
-            # something is wrong and they need to be killed
-            build_status, build_error = bt.run(timeout=5400, stdout=out, stderr=err, shell=True)
-    except IOError:
-        failed = True
+    build_job = BuildThread(target,jobs,packages)
+    # Give builds 90 mins to complete, if they haven't finished by then
+    # something is wrong and they need to be killed
+    build_status, build_error = build_job.run(timeout=5400)
     if build_error != 0:
-        logging.error(build_status)
-        _log_build_errors(tempf)
-        failed = True
-    rmtree(tempd)
-    return failed
+        return False
+    return True
 
 def reposync():
     cmds = {
@@ -190,31 +170,33 @@ class BuildThread(object):
     status = None
     output, error = '', ''
 
-    def __init__(self, command):
-#        if isinstance(command, basestring):
-#            command = shlex.split(command)
-        self.command = command
+    def __init__(self, target,jobs,packages):
+        self.command = "source build/envsetup.sh && breakfast %s && make -j%d %s" %
+                          (target,jobs,packages)
 
-    def run(self, timeout=None, **kwargs):
-        """ Run a command then return: (status, output, error). """
-        def target(**kwargs):
+    def run(self, timeout=None):
+        """ Run a command then return: (status, error, output). """
+        def runner():
+            failed = False
             try:
-                self.process = Popen(self.command, **kwargs)
-                self.output, self.error = self.process.communicate()
-                self.status = self.process.returncode
+                tempd = mkdtemp() # I dont understand mkstemp
+                tempf = os.path.join(tempd,'buildout')
+                with open(tempf,'w') as err, open(os.devnull,'w') as out:
+                    self.process = Popen(self.command, stdout=out, stderr=err,
+                                        shell=True) #<<Bad but needed
+                    self.output, self.error = self.process.communicate()
+                    self.status = self.process.returncode
             except:
                 self.error = traceback.format_exc()
                 self.status = -1
-        # default stdout and stderr
-#        if 'stdout' not in kwargs:
-#            kwargs['stdout'] = subprocess.PIPE
-#        if 'stderr' not in kwargs:
-#            kwargs['stderr'] = subprocess.PIPE
+                _log_build_errors(tempf)
+            finally:
+                rmtree(tempd)
         # thread
-        thread = threading.Thread(target=target, kwargs=kwargs)
+        thread = threading.Thread(target=runner)
         thread.start()
         thread.join(timeout)
         if thread.is_alive():
             self.process.terminate()
             thread.join()
-        return self.status, self.error #self.output, self.error
+        return self.status, self.error #self.output
