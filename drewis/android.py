@@ -44,7 +44,7 @@ def build(target, packages, clobber=True):
         'clobber': ('make','clobber'),
     }
     num_cpus = cpu_count()
-    load = num_cpus * 1.5 # Don't hose the build server (its used for other things too)
+    load = num_cpus * 2.5
 
     if clobber:
         try:
