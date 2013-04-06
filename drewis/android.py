@@ -41,7 +41,7 @@ def _log_build_errors(error_file):
 
 def build(target, packages, clobber=True):
     '''Returns true on failure'''
-
+    failed = True
     try:
         with open('/proc/meminfo') as f:
             mem_total = f.readline().split()[1]
@@ -81,7 +81,7 @@ def build(target, packages, clobber=True):
         _log_build_errors(tempf)
         failed = True
     rmtree(tempd)
-    return not failed
+    return failed
 
 def reposync():
     cmds = {
