@@ -2,7 +2,6 @@
 
 import os
 import logging
-from multiprocessing import cpu_count
 from subprocess import check_call, check_output, STDOUT
 from subprocess import CalledProcessError as CPE
 from tempfile import mkdtemp
@@ -43,8 +42,15 @@ def build(target, packages, clobber=True):
     cmds = {
         'clobber': ('make','clobber'),
     }
-    num_cpus = cpu_count()
-    load = num_cpus * 2.5
+    try:
+        with open('/proc/meminfo') as f:
+            mem_total = f.readline().split()[1]
+    except IOError:
+        mem_total = 8199922 # 8GB
+    jobs = 24 # Upper limit
+    max_jobs = int(mem_total)/2000000
+    if jobs > max_jobs:
+        jobs = max_jobs
 
     if clobber:
         try:
@@ -61,8 +67,8 @@ def build(target, packages, clobber=True):
             # But I would rather have it this way than calling a script to run
             # these commands. So if the parent script is killed, make doesnt
             # continue running in the background
-            check_call("source build/envsetup.sh; breakfast %s;make -j -l%d %s" %
-                          (target,load,packages), stdout=out, stderr=err, shell=True)
+            check_call("source build/envsetup.sh && breakfast %s && make -j%d %s" %
+                          (target,jobs,packages), stdout=out, stderr=err, shell=True)
     except IOError:
         pass
         failed = True
