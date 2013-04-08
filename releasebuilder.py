@@ -177,7 +177,7 @@ def main(args):
         target_out_dir = os.path.join('out', 'target', 'product', target)
         if os.path.isdir(target_out_dir):
             for f in os.listdir(target_out_dir):
-                if f.startswith('Evervolv') and f.endswith('.zip'):
+                if f.startswith('ev') and f.endswith('.zip'):
                     zips.append(f)
         if zips:
             codename = get_codename(target)
