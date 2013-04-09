@@ -76,8 +76,8 @@ def build(target, packages, clobber=True):
                                                          stderr=err, shell=True)
     except IOError:
         failed = True
-    if build_error != 0:
-        logging.error('FAILED: %s' % cmds.get('build'))
+    if build_status != 0:
+        logging.error('FAILED: %s, %s' % (cmds.get('build'),build_error))
         _log_build_errors(tempf)
         failed = True
     rmtree(tempd)
