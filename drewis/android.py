@@ -41,7 +41,7 @@ def _log_build_errors(error_file):
 
 def build(target, packages, clobber=True):
     '''Returns true on failure'''
-    failed = True
+    failed = False
     try:
         with open('/proc/meminfo') as f:
             mem_total = f.readline().split()[1]
