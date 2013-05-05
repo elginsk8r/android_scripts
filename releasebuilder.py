@@ -267,7 +267,7 @@ def main(args):
         try:
             f = open(main_manifest,'r')
         except IOError as e:
-            logging.error('%s' % e)
+            logging.warning('%s' % e)
         else:
             with f:
                 main_entries = json.load(f)
@@ -277,7 +277,7 @@ def main(args):
             try:
                 f = open(main_manifest,'w')
             except IOError as e:
-                logging.error('%s' % e)
+                logging.warning('%s' % e)
             else:
                 with f:
                     json.dump(main_entries,f,indent=2)
