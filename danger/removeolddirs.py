@@ -12,12 +12,14 @@ from sys import argv
 import os
 import time
 import shutil
+import subprocess
 
-numdays = 86400*22 # 3 weeks
+numdays = 86400*15 # 2 weeks
 now = time.time()
 script, directory, backup_dir = argv
 
 try:
+    print "backing up ",directory,"to ",backup_dir
     subprocess.check_call(['rsync', '-aq', directory, backup_dir])
 except subprocess.CalledProcessError as e:
     print e
