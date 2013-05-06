@@ -72,8 +72,9 @@ def build(target, packages, clobber=True):
         with open(tempf,'w') as err, open(os.devnull,'w') as out:
             # Give builds 90 mins to complete, if they haven't finished by then
             # something is wrong and they need to be killed
-            build_status, build_error = build_thread.run(timeout=5400, stdout=out,
-                                                         stderr=err, shell=True)
+            build_status, build_error = build_thread.run(timeout=5400,
+                                                stdout=out, stderr=err,
+                                                shell=True, executable='/bin/bash')
     except IOError:
         failed = True
     if build_status != 0:
