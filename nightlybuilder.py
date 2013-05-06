@@ -33,7 +33,6 @@ parser.add_argument('--nobuild', help=argparse.SUPPRESS,
 args = parser.parse_args()
 
 # static vars
-HELPER_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers')
 DATE = datetime.now().strftime('%Y.%m.%d')
 
 def main(args):
