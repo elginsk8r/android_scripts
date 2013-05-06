@@ -48,7 +48,7 @@ def build(target, packages, clobber=True):
     except IOError:
         mem_total = 8199922 # 8GB
 
-    jobs = int((mem_total*0.7)/1000000) # 70% available ram
+    jobs = int((int(mem_total)*0.7)/1000000) # 70% available ram
     jobs += jobs % 2 # ensure even number
     max_jobs = 32 # Testing shows more than 32 jobs does not improve build times
     if jobs > max_jobs:
