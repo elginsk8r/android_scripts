@@ -56,7 +56,7 @@ def build(target, packages, clobber=True):
 
     cmds = {
         'clobber': ('make','clobber'),
-        'build': "source build/envsetup.sh && breakfast %s && make -j%d %s" %(target,jobs,packages)
+        'build': "source build/envsetup.sh && lunch %s && make -j%d %s" %(target,jobs,packages)
     }
 
     if clobber:
