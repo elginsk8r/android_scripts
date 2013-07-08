@@ -26,9 +26,9 @@ parser.add_argument('--host', help="Hostname for upload")
 parser.add_argument('--user', help="Username for upload host")
 parser.add_argument('--remotedir', help="Remote path for uploads")
 parser.add_argument('--localdir', help="Local path for uploads")
-parser.add_argument('--nosync', help=argparse.SUPPRESS,
+parser.add_argument('--nosync', help="Skip sync",
                     action="store_true")
-parser.add_argument('--nobuild', help=argparse.SUPPRESS,
+parser.add_argument('--nobuild', help="Skip build",
                     action="store_true")
 args = parser.parse_args()
 
