@@ -153,15 +153,24 @@ def get_changelog(current,changelog):
         with f:
             previous = f.readline().rstrip('\n')
         _update_branch(current)
-        try: # Write the changelog
-            with open(changelog,'w') as out:
-                out.write('%s..%s\n' % (previous,current))
-            with open(changelog,'a') as out, open(os.devnull,'w') as err:
+        try: # Get the changelog
+            tempd = mkdtemp()
+            temp_changelog = os.path.join(tempd,'temp_changelog')
+            with open(temp_changelog,'w') as out, open(os.devnull,'w') as err:
                 check_call(('repo','forall','-pvc','git','log','--oneline',
                     '--no-merges','%s..%s' % (previous,current)),
                     stdout=out, stderr=err)
         except CPE as e:
             logging.error(e)
+        finally: # Write the changelog
+            if os.path.getsize(temp_changelog) == 0:
+                with open(temp_changelog,'w') as out:
+                    out.write("No new commits found.\n")
+            with open(changelog,'w') as outfile, open(temp_changelog) as infile:
+                outfile.write('%s..%s\n' % (previous,current))
+                for line in infile:
+                    outfile.write(line)
+            rmtree(tempd)
         try: # Detach the tree
             with open(os.devnull,'w') as out:
                 check_call(('repo','sync','-fdlq','-j12'),stdout=out,stderr=STDOUT)
