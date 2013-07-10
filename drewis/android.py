@@ -56,15 +56,18 @@ def build(target, packages, clobber=True):
 
     cmds = {
         'clobber': ('make','clobber'),
+        'installclean': ('make','installclean'),
         'build': "source build/envsetup.sh && lunch %s && make -j%d %s" %(target,jobs,packages)
     }
 
-    if clobber:
-        try:
-            with open(os.devnull,'w') as out:
+    try:
+        with open(os.devnull,'w') as out:
+            if clobber:
                 check_call(cmds.get('clobber'), stdout=out, stderr=STDOUT)
-        except CPE as e:
-            logging.error(e)
+            else:
+                check_call(cmds.get('installclean'), stdout=out, stderr=STDOUT)
+    except CPE as e:
+        logging.error(e)
 
     tempd = mkdtemp() # I dont understand mkstemp
     tempf = os.path.join(tempd,'buildout')
