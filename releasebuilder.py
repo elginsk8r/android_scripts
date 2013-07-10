@@ -164,6 +164,8 @@ def main(args):
         if not args.nobuild:
             target_start = datetime.now()
             pkg = 'otapackage'
+            if target == 'passion':
+                pkg = 'squishedpackage'
             if android.build(target,pkg,args.rebuild):
                 continue # Failed
             else:
