@@ -204,13 +204,24 @@ def main(args):
     # for json manifest
     json_info = []
 
+    # Targets to run through the squisher
+    squisher_targets = (
+            'passion',
+            'bravo',
+            'supersonic',
+            'inc',
+            'speedy',
+    )
+
     # build each target
     for target in args.target:
         if not args.nobuild:
             target_start = datetime.now()
             pkg = 'otapackage'
+            if target in squisher_targets:
+                pkg = 'squishedpackage'
             if target == 'passion':
-                pkg = 'otapackage systemupdatepackage'
+                pkg += ' systemupdatepackage'
             if android.build(target,pkg):
                 continue # Failed
             else:
