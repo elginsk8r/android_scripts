@@ -274,6 +274,7 @@ def main(args):
             if mirroring:
                 m_q.put(os.path.join(temp_dir,'info.json'))
         # for website
+        ''' # Not using this any more
         if mirroring:
             main_manifest = os.path.join(droid_mirror,'manifest.json')
             try:
@@ -292,7 +293,7 @@ def main(args):
                 else:
                     with f:
                         json.dump(entries,f,indent=2)
-
+        '''
 
     # wait for builds to finish uploading/mirroring
     if mirroring:
