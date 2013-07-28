@@ -56,7 +56,7 @@ def release_build(args):
     main('release',args.directory,args.message)
 
 def gapps_zip(args):
-    pass
+    main('gapps',args.directory,args.message)
 
 def date_from_stamp(stamp):
     t = datetime.utcfromtimestamp(stamp)
@@ -84,18 +84,29 @@ def handle_zips(build_type,walk_dir,message,current_builds=None):
                 p = os.path.join(path,f)
                 date = None
                 target = None
-                with ZipFile(p,'r') as z:
-                    try:
-                        bp = z.open('system/build.prop')
-                        props = bp.readlines()
-                        for prop in props:
-                            if prop.startswith("ro.build.date.utc"):
-                                date = date_from_stamp(int(prop.split('=')[1].strip()))
-                            if prop.startswith("ro.product.device"):
-                                target = prop.split('=')[1].strip()
-                    except KeyError:
-                        print "FATAL: unable to open zip %s for reading" % f
-                        exit()
+                if build_type == 'gapps':
+                    # We hack together the date from the filename
+                    rawdate = list(f.split('-')[2])
+                    rawdate.insert(6,'.')
+                    rawdate.insert(4,'.')
+                    date = "".join(rawdate)
+                    target = 'gapps'
+                else:
+                    with ZipFile(p,'r') as z:
+                        try:
+                            bp = z.open('system/build.prop')
+                            props = bp.readlines()
+                            for prop in props:
+                                if prop.startswith("ro.build.date.utc"):
+                                    date = date_from_stamp(int(prop.split('=')[1].strip()))
+                                if prop.startswith("ro.product.device"):
+                                    target = prop.split('=')[1].strip()
+                        except KeyError:
+                            print "FATAL: unable to open zip %s for reading" % f
+                            exit()
+                if target is None or date is None:
+                    print "FATAL: null target or date"
+                    exit()
                 md5 = md5sum(p)
                 size = os.path.getsize(p)
                 cname = os.path.basename(path.rstrip('/'))
