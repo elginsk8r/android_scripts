@@ -2,7 +2,7 @@
 # Andrew Sutherland <dr3wsuth3rland@gmail.com>
 
 if [ $# -ne 3 ]; then
-    echo "Usage $0 <path/to/system.img> <vendor> <device>"
+    echo "Usage $0 <path/to/factoryimage/system.img> <vendor> <device>"
     exit 1
 fi
 
@@ -23,28 +23,31 @@ TEMPDIR=$(mktemp -d)
 TEMPIMG=$(mktemp)
 PRODUCT=$VENDOR/$DEVICE
 BLOBFILE=device/$PRODUCT/proprietary-blobs.txt
-OUTDIR=vendor/$PRODUCT
-BASE=$OUTDIR/proprietary
+OUTDIR=vendor/$PRODUCT/
+BASE=${OUTDIR}blobs/
 
-if [ ! -d $BASE ]; then
-    mkdir -p $BASE
+if [ -d $OUTDIR ]; then
+    rm -r ${OUTDIR}*
 else
-    rm -rf $BASE/*
+    mkdir -p $OUTDIR
 fi
 
 ./out/host/linux-x86/bin/simg2img $SYSTEMIMG $TEMPIMG
 sudo mount -t ext4 -o loop $TEMPIMG $TEMPDIR
 
 for FILE in $(cat $BLOBFILE | grep -v ^# | grep -v ^$); do
-    cp ${TEMPDIR}${FILE#/system} $BASE/$(basename $FILE)
+    if [ ! -d ${BASE}$(dirname ${FILE#/system}) ]; then
+        mkdir -p ${BASE}$(dirname ${FILE#/system})
+    fi
+    cp ${TEMPDIR}${FILE#/system} ${BASE}${FILE#/system}
 done
 
 sudo umount $TEMPDIR
 rm -r $TEMPDIR
 rm -r $TEMPIMG
 
-(cat << EOF) > $OUTDIR/device-vendor-blobs.mk
-# Copyright (C) 2012 The Android Open Source Project
+(cat << EOF) > ${OUTDIR}device-vendor-blobs.mk
+# Copyright (C) 2013 The Evervolv Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,11 +73,11 @@ for FILE in $(cat $BLOBFILE | grep -v ^# | grep -v ^$); do
     if [ $COUNT = "0" ]; then
         LINEEND=""
     fi
-    echo "    $BASE/$(basename $FILE):$(echo $FILE | sed s#^/##)$LINEEND" >> $OUTDIR/device-vendor-blobs.mk
+    echo "    ${BASE}${FILE#/system/}:${FILE#/}$LINEEND" >> ${OUTDIR}device-vendor-blobs.mk
 done
 
-(cat << EOF) > $OUTDIR/device-vendor.mk
-# Copyright (C) 2012 The Android Open Source Project
+(cat << EOF) > ${OUTDIR}device-vendor.mk
+# Copyright (C) 2013 The Evervolv Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -88,13 +91,11 @@ done
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated from $BLOBFILE
-
-\$(call inherit-product, $OUTDIR/device-vendor-blobs.mk)
+\$(call inherit-product, ${OUTDIR}device-vendor-blobs.mk)
 EOF
 
-(cat << EOF) > $OUTDIR/BoardConfigVendor.mk
-# Copyright (C) 2012 The Android Open Source Project
+(cat << EOF) > ${OUTDIR}BoardConfigVendor.mk
+# Copyright (C) 2013 The Evervolv Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -107,8 +108,6 @@ EOF
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# This file was generated from $BLOBFILE
 
 USE_CAMERA_STUB := false
 EOF
