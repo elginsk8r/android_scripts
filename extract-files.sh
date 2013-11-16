@@ -58,7 +58,7 @@ for FILE in $(cat $BLOBFILE | grep -v ^# | grep -v ^$); do
     if [ $COUNT = "0" ]; then
         LINEEND=""
     fi
-    echo "    ${BASE}${FILE#/system/}:${FILE#/}$LINEEND" >> ${OUTDIR}device-vendor-blobs.mk
+    echo "    ${BASE}${FILE#/system/}:${FILE#/}:${VENDOR}$LINEEND" >> ${OUTDIR}device-vendor-blobs.mk
 done
 
 (cat << EOF) > ${OUTDIR}device-vendor.mk
