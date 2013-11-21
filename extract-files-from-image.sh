@@ -42,6 +42,9 @@ for FILE in $(cat $BLOBFILE | grep -v ^# | grep -v ^$); do
     cp ${TEMPDIR}${FILE#/system} ${BASE}${FILE#/system}
 done
 
+echo $(cat $TEMPDIR/build.prop | grep "ro.build.fingerprint=")
+echo $(cat $TEMPDIR/build.prop | grep "ro.build.description=")
+
 sudo umount $TEMPDIR
 rm -r $TEMPDIR
 rm -r $TEMPIMG
