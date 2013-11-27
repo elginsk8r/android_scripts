@@ -124,7 +124,7 @@ def handle_zips(build_type,walk_dir,message,current_builds=None):
                             'location': '%s/%s' %(cname,f),
                 })
                 # Only useful for passion
-                f = f.replace('.zip','-fastboot-update.zip')
+                f = f.replace('-squished.zip','-fastboot-update.zip')
                 p = os.path.join(path,f)
                 if os.path.exists(p):
                     md5 = md5sum(p)
