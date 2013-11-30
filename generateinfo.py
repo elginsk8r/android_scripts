@@ -123,23 +123,6 @@ def handle_zips(build_type,walk_dir,message,current_builds=None):
                             'type': build_type,
                             'location': '%s/%s' %(cname,f),
                 })
-                # Only useful for passion
-                f = f.replace('-squished.zip','-fastboot-update.zip')
-                p = os.path.join(path,f)
-                if os.path.exists(p):
-                    md5 = md5sum(p)
-                    size = os.path.getsize(p)
-                    json_info.append({
-                                'date': date,
-                                'device': target,
-                                'count': 0,
-                                'message': message,
-                                'md5sum': md5,
-                                'name': f,
-                                'size': size,
-                                'type': build_type,
-                                'location': '%s/%s' %(cname,f),
-                    })
     return json_info
 
 def main(build_type,walk_dir,message):
