@@ -296,8 +296,6 @@ def main(args):
             pkg = 'otapackage'
             if target in squisher_targets:
                 pkg = 'squishedpackage'
-            if target == 'passion':
-                pkg += ' systemupdatepackage'
             if android.build(target,pkg,not REBUILD):
                 continue # Failed #TODO reverse return value
             else:
