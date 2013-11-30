@@ -272,7 +272,6 @@ def main(args):
             'bravo',
             'supersonic',
             'inc',
-            'speedy',
     )
 
     # Export the proper build type
