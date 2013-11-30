@@ -210,7 +210,6 @@ def main(args):
             'bravo',
             'supersonic',
             'inc',
-            'speedy',
     )
 
     # build each target
