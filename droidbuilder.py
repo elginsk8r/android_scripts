@@ -300,13 +300,33 @@ def main(args):
     if html_changelog is not None:
         # add changelog to rsync queues
         if uploading:
-            upq.put((html_changelog,
-                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename()))
-                ))
+            # make the remote directories
+            full_upload_path_cl = os.path.join(upload_path, get_codename())
+            try:
+                subprocess.check_call(('ssh',
+                    '-p%s' % (droid_host_port),
+                    '%s@%s' % (droid_user, droid_host),
+                    'test -d %s || mkdir -p %s' %
+                        (full_upload_path_cl, full_upload_path_cl)
+                    ))
+            except subprocess.CalledProcessError as e:
+                logging.error('ssh returned %d while making %s' %
+                        (e.returncode, full_upload_path_cl))
+            else:
+                upq.put((html_changelog,
+                    "%s@%s:%s" % (droid_user, droid_host, full_upload_path_cl)
+                    ))
         if mirroring:
-            m_q.put((html_changelog,
-                os.path.join(mirror_path, get_codename())
-                ))
+            full_mirror_path_cl = os.path.join(mirror_path, get_codename())
+            try:
+                if not os.path.isdir(full_mirror_path_cl):
+                    os.makedirs(full_mirror_path_cl)
+            except OSError as e:
+                logging.error(e)
+            else:
+                m_q.put((html_changelog,
+                    full_mirror_path_cl
+                    ))
 
     #
     # Building
