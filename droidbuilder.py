@@ -305,7 +305,7 @@ def main(args):
 
     # Sync
     html_changelog = get_changelog(args)
-    if changelog not None:
+    if changelog is not None:
         # add changelog to rsync queues
         if uploading:
             upq.put(html_changelog)
@@ -479,7 +479,7 @@ def main(args):
 
     # Write scriptlog for website
     html_scriptlog = write_html_scriptlog(scriptlog)
-    if html_scriptlog not None:
+    if html_scriptlog is not None:
         # add log to rsync queues
         if uploading:
             upq.put(html_scriptlog)
