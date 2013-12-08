@@ -301,7 +301,7 @@ def main(args):
         # add changelog to rsync queues
         if uploading:
             upq.put((html_changelog,
-                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename())
+                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename()))
                 ))
         if mirroring:
             m_q.put((html_changelog,
@@ -479,7 +479,7 @@ def main(args):
         # add log to rsync queues
         if uploading:
             upq.put((html_scriptlog,
-                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename())
+                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename()))
                 ))
             upq.join()
         if mirroring:
