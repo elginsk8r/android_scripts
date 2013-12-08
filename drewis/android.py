@@ -149,7 +149,7 @@ def get_changelog(current,changelog):
     try: # read the previous branch
         f = open('.previous_branch')
     except IOError as e:
-        logging.error(e)
+        logging.warning(e)
         # It probably doesn't exist. Initialize it
         _update_branch(current)
     else:
