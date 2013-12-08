@@ -196,7 +196,7 @@ def write_html_scriptlog(scriptlog):
         return None
     # create html scriptlog
     if os.path.exists(scriptlog):
-        log_dir = os.path.join(os.path.realpath(os.getcwd()), "%s_logs" % BUILD_TYPE))
+        log_dir = os.path.join(os.path.realpath(os.getcwd()), "%s_logs" % BUILD_TYPE)
         html_scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.html')
         sl = html.Create()
         sl.title('Nightly Log')
