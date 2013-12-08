@@ -113,7 +113,8 @@ def handle_args():
 
     return parser.parse_args()
 
-def setup_logging(directory,verbose=False):
+def setup_logging(args):
+    directory = os.path.join(args.source, "%s_logs" % BUILD_TYPE)
     try:
         if not os.path.isdir(directory):
             os.makedirs(directory)
@@ -125,9 +126,11 @@ def setup_logging(directory,verbose=False):
                 level=logging.INFO,
                 format='%(levelname)-8s %(message)s'
                 )
-        if verbose:
+        if not args.quiet:
             console = logging.StreamHandler()
             logging.getLogger('').addHandler(console)
+        return scriptlog
+    return None
 
 def get_codename(target):
     if NIGHTLY_BUILD:
@@ -153,6 +156,60 @@ def get_message(target,args):
             return args.message
     return "%s build for %s" % (BUILD_TYPE,target)
 
+def get_changelog(args):
+    if not NIGHTLY_BUILD:
+        return None
+    if not args.nosync:
+        # common directory for all changelogs
+        changelog_dir = os.path.join(os.path.realpath(os.getcwd()), 'nightly_changelogs')
+        try:
+            if not os.path.isdir(changelog_dir):
+                os.mkdir(changelog_dir)
+        except OSError:
+            pass
+        # changelog
+        changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.log')
+        # sync the tree
+        if android.reposync():
+            logging.error('Sync failed. Skipping the build')
+            args.nobuild = True
+            # Remove out so we dont upload yesterdays build
+            if os.path.isdir('out'):
+                shutil.rmtree('out')
+        else:
+            android.get_changelog(DATE,changelog)
+
+        # create the html changelog
+        if os.path.exists(changelog):
+            logging.info('Created changelog for %s' % DATE)
+            html_changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.html')
+            cl = html.Create()
+            cl.title('Changelog')
+            cl.css('body {font-family:"Lucida Console", Monaco, monospace;font-size:0.9em;}')
+            clbody = html.parse_file(changelog)
+            cl.header(clbody[0])
+            cl.body(html.add_line_breaks(clbody[1:]))
+            cl.write(html_changelog)
+            return html_changelog
+    else:
+        logging.info('Skipped sync')
+    return None
+
+def write_html_scriptlog(scriptlog):
+    if not NIGHTLY:
+        return None
+    # create html scriptlog
+    if os.path.exists(scriptlog):
+        html_scriptlog = os.path.join(log_dir, 'scriptlog-' + DATE + '.html')
+        sl = html.Create()
+        sl.title('Nightly Log')
+        sl.css('body {font-family:"Lucida Console", Monaco, monospace;font-size:0.9em;}')
+        sl.header(DATE)
+        sl.body(html.add_line_breaks(html.parse_file(scriptlog)))
+        sl.write(html_scriptlog)
+        return html_scriptlog
+    return None
+
 def testing_build(args):
     global BUILD_TYPE
     BUILD_TYPE = 'testing'
@@ -160,7 +217,6 @@ def testing_build(args):
     TESTING_BUILD = True
     global REBUILD
     REBUILD = args.rebuild
-    setup_logging(os.path.join(args.source,'testing_logs'), not args.quiet)
     main(args)
 
 def release_build(args):
@@ -170,7 +226,6 @@ def release_build(args):
     RELEASE_BUILD = True
     global REBUILD
     REBUILD = args.rebuild
-    setup_logging(os.path.join(args.source,'release_logs'), not args.quiet)
     main(args)
 
 def nightly_build(args):
@@ -178,10 +233,10 @@ def nightly_build(args):
     BUILD_TYPE = 'nightly'
     global NIGHTLY_BUILD
     NIGHTLY_BUILD = True
-    setup_logging(os.path.join(args.source,'nightly_logs'))
     main(args)
 
 def main(args):
+    scriptlog = setup_logging(args)
     logging.info("Starting %s build" % BUILD_TYPE)
     # for total runtime
     script_start = datetime.now()
@@ -247,6 +302,15 @@ def main(args):
         t2 = rsync.rsyncThread(m_q, message='Mirrored')
         t2.setDaemon(True)
         t2.start()
+
+    # Sync
+    html_changelog = get_changelog(args)
+    if changelog not None:
+        # add changelog to rsync queues
+        if uploading:
+            upq.put(html_changelog)
+        if mirroring:
+            m_q.put(html_changelog)
 
     #
     # Building
@@ -412,6 +476,17 @@ def main(args):
 
     logging.info('Total run time: %s' %
             (pretty_time(datetime.now() - script_start)))
+
+    # Write scriptlog for website
+    html_scriptlog = write_html_scriptlog(scriptlog)
+    if html_scriptlog not None:
+        # add log to rsync queues
+        if uploading:
+            upq.put(html_scriptlog)
+            upq.join()
+        if mirroring:
+            m_q.put(html_scriptlog)
+            m_q.join()
 
     # cd previous working dir
     os.chdir(previous_working_dir)
