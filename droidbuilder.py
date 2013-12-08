@@ -192,7 +192,7 @@ def get_changelog(args):
     return None
 
 def write_html_scriptlog(scriptlog):
-    if not NIGHTLY:
+    if not NIGHTLY_BUILD:
         return None
     # create html scriptlog
     if os.path.exists(scriptlog):
