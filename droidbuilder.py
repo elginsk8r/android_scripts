@@ -128,7 +128,7 @@ def setup_logging(args):
         return scriptlog
     return None
 
-def get_codename(target):
+def get_codename(target=None):
     if NIGHTLY_BUILD:
         return DATE
     codename = None
@@ -301,11 +301,11 @@ def main(args):
         # add changelog to rsync queues
         if uploading:
             upq.put((html_changelog,
-                "%s@%s:%s" % (droid_user, droid_host, full_upload_path)
+                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename())
                 ))
         if mirroring:
             m_q.put((html_changelog,
-                full_mirror_path
+                os.path.join(mirror_path, get_codename())
                 ))
 
     #
@@ -479,12 +479,12 @@ def main(args):
         # add log to rsync queues
         if uploading:
             upq.put((html_scriptlog,
-                "%s@%s:%s" % (droid_user, droid_host, full_upload_path)
+                "%s@%s:%s" % (droid_user, droid_host, os.path.join(upload_path, get_codename())
                 ))
             upq.join()
         if mirroring:
             m_q.put((html_scriptlog,
-                full_mirror_path
+                os.path.join(mirror_path, get_codename())
                 ))
             m_q.join()
 
