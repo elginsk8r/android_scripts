@@ -146,6 +146,7 @@ def _update_branch(new):
     return
 
 def get_changelog(current,changelog):
+    has_changes = True
     try: # read the previous branch
         f = open('.previous_branch')
     except IOError as e:
@@ -169,6 +170,7 @@ def get_changelog(current,changelog):
             if os.path.getsize(temp_changelog) == 0:
                 with open(temp_changelog,'w') as out:
                     out.write("No new commits found.\n")
+                has_changes = False
             with open(changelog,'w') as outfile, open(temp_changelog) as infile:
                 outfile.write('%s..%s\n' % (previous,current))
                 for line in infile:
@@ -179,7 +181,7 @@ def get_changelog(current,changelog):
                 check_call(('repo','sync','-fdlq','-j12'),stdout=out,stderr=STDOUT)
         except CPE as e:
             logging.error(e)
-    return
+    return has_changes
 
 class CommandThread(object):
     """

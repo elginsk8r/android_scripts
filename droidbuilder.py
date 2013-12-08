@@ -173,7 +173,11 @@ def get_changelog(args):
             if os.path.isdir('out'):
                 shutil.rmtree('out')
         else:
-            android.get_changelog(DATE,changelog)
+            has_changes = android.get_changelog(DATE,changelog)
+
+        if not has_changes:
+            logging.info("No changes found.. aborting build")
+            return None
 
         # create the html changelog
         if os.path.exists(changelog):
@@ -328,6 +332,9 @@ def main(args):
                 m_q.put((html_changelog,
                     full_mirror_path_cl
                     ))
+    else:
+        if NIGHTLY_BUILD: # No changes, dont do the build
+            return
 
     #
     # Building
