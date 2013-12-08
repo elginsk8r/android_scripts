@@ -37,6 +37,10 @@ def handle_args():
             help="device(s) to build",
             nargs='+',
             )
+    common_options.add_argument('-q','--quiet',
+            help="don't log to console",
+            action="store_true",
+            )
 
     build_options = common_options.add_argument_group("building")
     build_options.add_argument('--source',
@@ -70,10 +74,6 @@ def handle_args():
             )
 
     release_testing_options = argparse.ArgumentParser(add_help=False)
-    release_testing_options.add_argument('-q','--quiet',
-            help="don't log to console",
-            action="store_true",
-            )
     release_testing_options.add_argument('--message',
             help="note to put in 'message' field in info",
             )
