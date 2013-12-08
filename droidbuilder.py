@@ -22,8 +22,6 @@ BUILD_TYPE = None
 TESTING_BUILD = False
 RELEASE_BUILD = False
 NIGHTLY_BUILD = False
-#TODO remove from global
-REBUILD = False
 
 def handle_args():
     parser = argparse.ArgumentParser(
@@ -46,6 +44,10 @@ def handle_args():
     build_options.add_argument('--source',
             help="path to android tree (default pwd)",
             default=os.getcwd(),
+            )
+    build_options.add_argument('--rebuild',
+            help="don't clobber before building",
+            action="store_true",
             )
 
     upload_options = common_options.add_argument_group("uploading")
@@ -76,12 +78,6 @@ def handle_args():
     release_testing_options = argparse.ArgumentParser(add_help=False)
     release_testing_options.add_argument('--message',
             help="note to put in 'message' field in info",
-            )
-
-    build_options2 = release_testing_options.add_argument_group("building")
-    build_options2.add_argument('--rebuild',
-            help="don't clobber before building",
-            action="store_true",
             )
 
     nightly_options = argparse.ArgumentParser(add_help=False)
@@ -215,8 +211,6 @@ def testing_build(args):
     BUILD_TYPE = 'testing'
     global TESTING_BUILD
     TESTING_BUILD = True
-    global REBUILD
-    REBUILD = args.rebuild
     main(args)
 
 def release_build(args):
@@ -224,8 +218,6 @@ def release_build(args):
     BUILD_TYPE = 'release'
     global RELEASE_BUILD
     RELEASE_BUILD = True
-    global REBUILD
-    REBUILD = args.rebuild
     main(args)
 
 def nightly_build(args):
@@ -359,7 +351,7 @@ def main(args):
             pkg = 'otapackage'
             if target in squisher_targets:
                 pkg = 'squishedpackage'
-            if android.build(target,pkg,not REBUILD):
+            if android.build(target, pkg, not args.rebuild):
                 continue # Failed #TODO reverse return value
             else:
                 logging.info('Built %s in %s' %
