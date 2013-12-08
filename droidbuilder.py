@@ -300,9 +300,13 @@ def main(args):
     if html_changelog is not None:
         # add changelog to rsync queues
         if uploading:
-            upq.put(html_changelog)
+            upq.put((html_changelog,
+                "%s@%s:%s" % (droid_user, droid_host, full_upload_path)
+                ))
         if mirroring:
-            m_q.put(html_changelog)
+            m_q.put((html_changelog,
+                full_mirror_path
+                ))
 
     #
     # Building
@@ -474,10 +478,14 @@ def main(args):
     if html_scriptlog is not None:
         # add log to rsync queues
         if uploading:
-            upq.put(html_scriptlog)
+            upq.put((html_scriptlog,
+                "%s@%s:%s" % (droid_user, droid_host, full_upload_path)
+                ))
             upq.join()
         if mirroring:
-            m_q.put(html_scriptlog)
+            m_q.put((html_scriptlog,
+                full_mirror_path
+                ))
             m_q.join()
 
     # cd previous working dir
