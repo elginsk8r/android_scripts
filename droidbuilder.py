@@ -22,6 +22,7 @@ BUILD_TYPE = None
 TESTING_BUILD = False
 RELEASE_BUILD = False
 NIGHTLY_BUILD = False
+FORCE_NIGHTLY = False
 
 def handle_args():
     parser = argparse.ArgumentParser(
@@ -37,6 +38,11 @@ def handle_args():
             )
     common_options.add_argument('-q','--quiet',
             help="don't log to console",
+            action="store_true",
+            )
+
+    common_options.add_argument('-f','--force',
+            help="force the nightly build, even if there are no changes",
             action="store_true",
             )
 
@@ -176,8 +182,11 @@ def get_changelog(args):
             has_changes = android.get_changelog(DATE,changelog)
 
         if not has_changes:
-            logging.info("No changes found.. aborting build")
-            return None
+            if args.force:
+                logging.info("No changes found, but force option enabled")
+            else:
+                logging.info("No changes found.. aborting build")
+                return None
 
         # create the html changelog
         if os.path.exists(changelog):
@@ -333,7 +342,7 @@ def main(args):
                     full_mirror_path_cl
                     ))
     else:
-        if NIGHTLY_BUILD: # No changes, dont do the build
+        if NIGHTLY_BUILD and not args.force: # No changes, dont do the build
             return
 
     #
