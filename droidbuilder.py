@@ -363,14 +363,6 @@ def main(args):
     # for json manifest
     json_info = []
 
-    # Targets to run through the squisher
-    squisher_targets = (
-            'passion',
-            'bravo',
-            'supersonic',
-            'inc',
-    )
-
     # Export the proper build type
     if TESTING_BUILD:
         os.putenv('TESTING_BUILD','true')
@@ -389,9 +381,7 @@ def main(args):
     for target in args.target:
         if not args.nobuild:
             target_start = datetime.now()
-            pkg = 'otapackage'
-            if target in squisher_targets:
-                pkg = 'squishedpackage'
+            pkg = 'bacon'
             if android.build(target, pkg, not args.rebuild):
                 continue # Failed #TODO reverse return value
             else:
