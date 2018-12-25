@@ -142,7 +142,7 @@ def get_codename(target=None):
         for d in dirs:
             if target == d:
                 try:
-                    f = open(os.path.join(path,d,'ev.mk'))
+                    f = open(os.path.join(path,d,'ev_' + target + '.mk'))
                 except IOError:
                     continue
                 else:
