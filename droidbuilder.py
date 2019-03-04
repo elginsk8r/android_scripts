@@ -171,6 +171,7 @@ def get_changelog(args):
             pass
         # changelog
         changelog = os.path.join(changelog_dir, 'changelog-' + DATE + '.log')
+        has_changes = False
         # sync the tree
         if android.reposync():
             logging.error('Sync failed. Skipping the build')
