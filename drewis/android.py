@@ -103,7 +103,7 @@ def reposync():
             with open(os.devnull,'w') as out:
                 check_call(cmds.get('sync'),stdout=out,stderr=STDOUT)
         except CPE as e:
-            failed = True
+            #failed = True
             logging.error(e)
         else:
             failed = False
