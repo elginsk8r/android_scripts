@@ -90,7 +90,7 @@ def build(target, packages, clobber=True):
 
 def reposync():
     cmds = {
-        'sync':     ('repo', 'sync', '-c', '--force-sync', '-j12'),
+        'sync':     ('repo', 'sync', '-fdq', '-j12'),
         'gitclean': ('repo', 'forall', '-c', 'git', 'clean', '-fdq'),
         'gitreset': ('repo', 'forall', '-c', 'git', 'reset', '-q', '--hard'),
         'status':   ('repo', 'status', '-j4'),
