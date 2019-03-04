@@ -76,7 +76,7 @@ def build(target, packages, clobber=True):
         with open(tempf,'w') as err, open(os.devnull,'w') as out:
             # Give builds 90 mins to complete, if they haven't finished by then
             # something is wrong and they need to be killed
-            build_status, build_error = build_thread.run(timeout=5400,
+            build_status, build_error = build_thread.run(timeout=None,
                                                 stdout=out, stderr=err,
                                                 shell=True, executable='/bin/bash')
     except IOError:
@@ -90,7 +90,7 @@ def build(target, packages, clobber=True):
 
 def reposync():
     cmds = {
-        'sync':     ('repo', 'sync', '-fdq', '-j12'),
+        'sync':     ('repo', 'sync', '-c', '--force-sync', '-j12'),
         'gitclean': ('repo', 'forall', '-c', 'git', 'clean', '-fdq'),
         'gitreset': ('repo', 'forall', '-c', 'git', 'reset', '-q', '--hard'),
         'status':   ('repo', 'status', '-j4'),
